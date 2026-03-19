@@ -1,35 +1,58 @@
-@if (loading()) {
-  <div class="data-manager-page__loading">Loading...</div>
-} @else {
-  <section class="data-manager-page">
-    <app-sidebar
-      [selectedType]="selectedType()"
-      [types]="typeOptions"
-      (typeChange)="onTypeChange($event)"
-    />
+<div class="page">
+  <app-sidebar
+    [selectedType]="selectedType()"
+    [types]="typeOptions"
+    (typeChange)="onTypeChange($event)"
+  />
 
-    <div class="data-manager-page__content">
-      <app-pagination
-        [page]="page()"
-        [limit]="limit()"
-        [total]="total()"
-        [totalPages]="totalPages()"
-        [canAddUser]="isUsersType()"
-        (pageChange)="onPageChange($event)"
-        (limitChange)="onLimitChange($event)"
-        (addUserClick)="onOpenAddUser()"
-      />
+  <section class="page__content">
+    <div class="page__card">
+      @if (showSearch()) {
+        <div class="page__toolbar">
+          <div class="searchbar">
+            <input
+              class="searchbar__input"
+              type="text"
+              [placeholder]="searchPlaceholder()"
+              [value]="searchTerm()"
+              (input)="onSearchInput($event)"
+            />
 
-      <app-data-table
-        [items]="items()"
-        [previewColumns]="currentPreviewColumns()"
-        [selectedIds]="selectedIds()"
-        (selectedIdsChange)="onSelectedIdsChange($event)"
-        (deleteItem)="onDeleteItem($event)"
-        (deleteMany)="onDeleteMany($event)"
-        (toggleEnabled)="onToggleEnabled($event)"
-        (editItem)="onOpenEditUser($event)"
-      />
+            @if (searchTerm().trim()) {
+              <button
+                class="searchbar__button"
+                type="button"
+                (click)="clearSearch()"
+              >
+                Clear
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @if (loading()) {
+        <div class="page__loading">Loading...</div>
+      } @else {
+        <app-pagination
+          [page]="page()"
+          [limit]="limit()"
+          [total]="total()"
+          [totalPages]="totalPages()"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)"
+        />
+
+        <app-data-table
+          [items]="items()"
+          [previewColumns]="currentPreviewColumns()"
+          [selectedIds]="selectedIds()"
+          (deleteItem)="onDeleteItem($event)"
+          (deleteMany)="onDeleteMany($event)"
+          (toggleEnabled)="onToggleEnabled($event)"
+          (selectedIdsChange)="onSelectedIdsChange($event)"
+        />
+      }
     </div>
   </section>
 
