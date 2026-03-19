@@ -13,12 +13,16 @@ import { PaginatedResponse } from '../models/paginated-response';
 export class DataService {
   private readonly api = inject(ApiService);
 
-  getItems(type: ItemType, page: number, limit: number): Observable<PaginatedResponse<BaseItem>> {
+  getItems(type: ItemType, page: number, limit: number): Observable<PaginatedResponse<Record<string, unknown>>> {
     const params = new HttpParams()
       .set('page', page)
       .set('limit', limit);
 
-    return this.api.get<PaginatedResponse<BaseItem>>(`/${type}`, params);
+    return this.api.get<PaginatedResponse<Record<string, unknown>>>(`/${type}`, params);
+  }
+
+  createItem(type: ItemType, payload: Record<string, unknown>): Observable<unknown> {
+    return this.api.post(`/${type}`, payload);
   }
 
   deleteItem(type: ItemType, id: string): Observable<void> {
