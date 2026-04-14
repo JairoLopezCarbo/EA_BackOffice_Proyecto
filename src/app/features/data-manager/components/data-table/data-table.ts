@@ -18,8 +18,11 @@ export class DataTable {
     delete: true,
     toggleEnabled: false
   });
+  showDetailsAction = input(false);
+  detailsActionLabel = input('View details');
   previewTextMaxLength = input(30);
   selectedIds = input<string[]>([]);
+  enableSelection = input(true);
   canAddItem = input(false);
   addButtonLabel = input('Add item');
   editableFields = input<string[]>([]);
@@ -29,6 +32,7 @@ export class DataTable {
   deleteItem = output<string>();
   deleteMany = output<string[]>();
   toggleEnabled = output<string>();
+  viewDetails = output<string>();
   selectedIdsChange = output<string[]>();
   addItemClick = output<void>();
   inlineEditSubmit = output<{ itemId: string; changes: Record<string, string> }>();
@@ -55,15 +59,16 @@ export class DataTable {
 
   tableGridTemplateColumns = computed(() => {
     const previewCount = Math.max(1, this.activePreviewColumns().length);
-    return `52px repeat(${previewCount}, minmax(0, 1fr)) 112px`;
+    const firstColumnWidth = this.showDetailsAction() ? '140px' : '52px';
+    return `${firstColumnWidth} repeat(${previewCount}, minmax(0, 1fr)) 112px`;
   });
 
   get selectionMode(): boolean {
-    return this.selectedIds().length > 0;
+    return this.enableSelection() && this.selectedIds().length > 0;
   }
 
   get selectedCount(): number {
-    return this.selectedIds().length;
+    return this.enableSelection() ? this.selectedIds().length : 0;
   }
 
   getRowKey(itemId: string, index: number): string {
@@ -95,6 +100,10 @@ export class DataTable {
   }
 
   onCheckboxChange(itemId: string, event: Event): void {
+    if (!this.enableSelection()) {
+      return;
+    }
+
     const checked = (event.target as HTMLInputElement).checked;
     const next = new Set(this.getSelectedIdSet());
 
@@ -117,6 +126,10 @@ export class DataTable {
 
   onAddItem(): void {
     this.addItemClick.emit();
+  }
+
+  onViewDetails(itemId: string): void {
+    this.viewDetails.emit(itemId);
   }
 
   startInlineEdit(item: ItemModelBase, rowIndex: number): void {
@@ -196,12 +209,36 @@ export class DataTable {
     return item.enabled === false;
   }
 
+  isCreateAction(item: ItemModelBase): boolean {
+    return this.getItemAction(item) === 'CREATE';
+  }
+
+  isModifyAction(item: ItemModelBase): boolean {
+    return this.getItemAction(item) === 'MODIFY';
+  }
+
+  isStatusAction(item: ItemModelBase): boolean {
+    return this.getItemAction(item) === 'STATUS';
+  }
+
+  isDeleteAction(item: ItemModelBase): boolean {
+    return this.getItemAction(item) === 'DELETE';
+  }
+
   onBulkDelete(): void {
+    if (!this.enableSelection()) {
+      return;
+    }
+
     this.deleteMany.emit(this.selectedIds());
     this.clearSelection();
   }
 
   clearSelection(): void {
+    if (!this.enableSelection()) {
+      return;
+    }
+
     this.selectedIdsChange.emit([]);
   }
 
@@ -350,5 +387,15 @@ export class DataTable {
     }
 
     return null;
+  }
+
+  private getItemAction(item: ItemModelBase): string {
+    const action = (item as unknown as Record<string, unknown>)['action'];
+
+    if (typeof action !== 'string') {
+      return '';
+    }
+
+    return action.trim().toUpperCase();
   }
 }

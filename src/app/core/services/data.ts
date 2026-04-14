@@ -29,7 +29,7 @@ export class DataService {
       .set('limit', limit);
 
     return this.api
-      .get<Record<string, unknown> | PaginatedResponse<Record<string, unknown>>>(`/${type}`, params)
+      .get<Record<string, unknown>[] | Record<string, unknown> | PaginatedResponse<Record<string, unknown>>>(`/${type}`, params)
       .pipe(map((response) => this.normalizePaginatedResponse(type, response, page, limit)));
   }
 
@@ -87,10 +87,22 @@ export class DataService {
 
   private normalizePaginatedResponse<TType extends ItemType>(
     type: TType,
-    response: Record<string, unknown> | PaginatedResponse<Record<string, unknown>>,
+    response: Record<string, unknown>[] | Record<string, unknown> | PaginatedResponse<Record<string, unknown>>,
     requestedPage: number,
     requestedLimit: number
   ): PaginatedResponse<ItemModelByType[TType]> {
+    if (Array.isArray(response)) {
+      const items = normalizeManyByType(type, response);
+
+      return {
+        data: items,
+        page: requestedPage,
+        limit: requestedLimit,
+        total: items.length,
+        totalPages: 1
+      };
+    }
+
     // Different backends can return pagination with different field names.
     // This method unifies those responses into a single app-friendly shape.
     const normalizedResponse = response as Record<string, unknown>;

@@ -9,13 +9,15 @@
     />
 
     <div class="data-manager-page__content">
-      <app-search-bar
-        class="data-manager-page__search"
-        [placeholder]="searchPlaceholder()"
-        [value]="searchTerm()"
-        [searching]="searching()"
-        (valueChange)="onSearchTermChange($event)"
-      />
+      @if (showSearchBar()) {
+        <app-search-bar
+          class="data-manager-page__search"
+          [placeholder]="searchPlaceholder()"
+          [value]="searchTerm()"
+          [searching]="searching()"
+          (valueChange)="onSearchTermChange($event)"
+        />
+      }
 
       <app-pagination
         [page]="page()"
@@ -31,8 +33,11 @@
         [items]="items()"
         [previewColumns]="currentPreviewColumns()"
         [actionConfig]="currentActionConfig()"
+        [showDetailsAction]="showHistoryDetailsButton()"
+        [detailsActionLabel]="'View details'"
         [editableFields]="currentEditableFields()"
         [selectedIds]="selectedIds()"
+        [enableSelection]="!isHistoryType()"
         [canAddItem]="canAddCurrentType()"
         [addButtonLabel]="addButtonLabel()"
         [inlineEditSavingItemId]="inlineEditSavingItemId()"
@@ -43,6 +48,7 @@
         (toggleEnabled)="onToggleEnabled($event)"
         (addItemClick)="onOpenAddItem()"
         (inlineEditSubmit)="onInlineEditSubmit($event)"
+        (viewDetails)="onViewHistoryDetails($event)"
       />
     </div>
   </section>
@@ -77,5 +83,11 @@
     (close)="onClosePointModal()"
     (submit)="onSubmitPoint()"
     (fieldChange)="onPointFieldChange($event.key, $event.value)"
+  />
+
+  <app-history-details-modal
+    [open]="showHistoryDetailsModal()"
+    [item]="selectedHistoryItem()"
+    (close)="onCloseHistoryDetailsModal()"
   />
 }

@@ -100,6 +100,26 @@
   transition: background 0.2s ease;
 }
 
+.table__row--action-create {
+  background: #49cc90;
+  border: 1px solid #27ae60;
+}
+
+.table__row--action-modify {
+  background: #fca130;
+  border: 1px solid #f08d0d;
+}
+
+.table__row--action-status {
+  background: #61affe;
+  border: 1px solid #0268d4;
+}
+
+.table__row--action-delete {
+  background: #f93e3e;
+  border: 1px solid #d32f2f;
+}
+
 .table__row:hover .table__col--actions {
   opacity: 1;
 }
@@ -212,6 +232,26 @@
 }
 
 .table__add-btn:active {
+  transform: translateY(1px);
+}
+
+.table__details-btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  background: #0f766e;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.table__details-btn:hover {
+  background: #115e59;
+}
+
+.table__details-btn:active {
   transform: translateY(1px);
 }
 

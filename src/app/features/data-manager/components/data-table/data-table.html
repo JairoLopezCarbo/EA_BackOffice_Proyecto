@@ -47,20 +47,34 @@
           <div
             class="table__row"
             [class.table__row--disabled]="isRowDisabled(item)"
+            [class.table__row--action-create]="isCreateAction(item)"
+            [class.table__row--action-modify]="isModifyAction(item)"
+            [class.table__row--action-status]="isStatusAction(item)"
+            [class.table__row--action-delete]="isDeleteAction(item)"
             [style.grid-template-columns]="tableGridTemplateColumns()"
             (click)="toggleExpand(item._id, rowIndex)"
           >
             <div class="table__col table__col--check" (click)="$event.stopPropagation()">
-              <label
-                class="table__row-checkbox"
-                [class.table__row-checkbox--visible]="selectionMode || isSelected(item._id)"
-              >
-                <input
-                  type="checkbox"
-                  [checked]="isSelected(item._id)"
-                  (change)="onCheckboxChange(item._id, $event)"
-                />
-              </label>
+              @if (showDetailsAction()) {
+                <button
+                  type="button"
+                  class="table__details-btn"
+                  (click)="onViewDetails(item._id)"
+                >
+                  {{ detailsActionLabel() }}
+                </button>
+              } @else if (enableSelection()) {
+                <label
+                  class="table__row-checkbox"
+                  [class.table__row-checkbox--visible]="selectionMode || isSelected(item._id)"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="isSelected(item._id)"
+                    (change)="onCheckboxChange(item._id, $event)"
+                  />
+                </label>
+              }
             </div>
 
             @for (column of activePreviewColumns(); track column.key) {
@@ -75,7 +89,7 @@
               class="table__col table__col--actions"
               (click)="$event.stopPropagation()"
             >
-              @if (!selectionMode && isInlineEditingRow(getRowKey(item._id, rowIndex))) {
+              @if (!showDetailsAction() && !selectionMode && isInlineEditingRow(getRowKey(item._id, rowIndex))) {
                 <div class="table__inline-actions">
                   <button
                     type="button"
@@ -94,7 +108,7 @@
                     Cancel
                   </button>
                 </div>
-              } @else if (!selectionMode) {
+              } @else if (!showDetailsAction() && !selectionMode) {
                 <app-item-action-buttons
                   [item]="item"
                   [actionConfig]="actionConfig()"
