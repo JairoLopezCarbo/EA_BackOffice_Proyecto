@@ -5,6 +5,32 @@
   display: flex;
   flex-direction: column;
   font-size: 18px;
+  position: relative;
+}
+
+.table--loading {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.table__loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 10;
+  border-radius: inherit;
+}
+
+.table__loading-indicator {
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
 }
 
 .table__body {

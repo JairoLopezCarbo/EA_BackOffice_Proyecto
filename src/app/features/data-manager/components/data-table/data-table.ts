@@ -25,6 +25,7 @@ export class DataTable {
   editableFields = input<string[]>([]);
   inlineEditSavingItemId = input<string | null>(null);
   inlineEditCompletedItemId = input<string | null>(null);
+  loading = input(false);
 
   deleteItem = output<string>();
   deleteMany = output<string[]>();
