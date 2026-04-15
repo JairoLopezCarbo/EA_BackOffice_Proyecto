@@ -182,37 +182,47 @@ export class DataManagerPage implements OnInit {
   }
 
   onPageChange(page: number): void {
-    if (this.isGlobalSearching()) {
-      return;
-    }
-
     this.page.set(page);
-    this.loadItems();
+
+    const term = this.searchTerm().trim();
+    const filter = term ? { [this.getSearchKey()]: term } : undefined;
+
+    this.loadItems(filter);
   }
 
   onLimitChange(limit: number): void {
     this.limit.set(limit);
     this.page.set(1);
 
-    if (this.isGlobalSearching()) {
-      this.searchAcrossAllPages();
-      return;
-    }
+    const term = this.searchTerm().trim();
+    const filter = term ? { [this.getSearchKey()]: term } : undefined;
 
-    this.loadItems();
+    this.loadItems(filter);
   }
 
   onSearchTermChange(value: string): void {
     this.searchTerm.set(value);
 
     if (!value.trim()) {
-      this.isGlobalSearching.set(false);
       this.searching.set(false);
       this.loadItems();
       return;
     }
 
-    this.searchAcrossAllPages();
+    const term = value.trim();
+    const searchKey = this.getSearchKey();
+
+    if (!searchKey) {
+      this.loadItems();
+      return;
+    }
+
+    this.page.set(1);
+    this.searching.set(true);
+
+    const filter = { [searchKey]: term };
+
+    this.loadItems(filter);
   }
 
   private searchAcrossAllPages(): void {
@@ -720,25 +730,28 @@ export class DataManagerPage implements OnInit {
     this.savingPoint.set(false);
   }
 
-  private loadItems(): void {
+  private loadItems(filters?: Record<string, unknown>): void {
     this.loading.set(true);
 
     const page = this.page();
     const limit = this.limit();
 
-    this.dataService.getItems(this.selectedType(), page, limit).subscribe({
+    this.dataService.getItems(this.selectedType(), page, limit, filters).subscribe({
       next: (response) => {
         this.allItems.set(response.data);
-        this.applyLocalFilter();
+        // Render exactly what the backend returned (server-side filtered & paginated)
+        this.items.set(response.data);
         this.page.set(Math.max(1, response.page));
         this.limit.set(Math.max(1, response.limit));
         this.total.set(Math.max(0, response.total));
         this.totalPages.set(Math.max(1, response.totalPages));
         this.loading.set(false);
+        this.searching.set(false);
       },
       error: (error) => {
         console.error('Load items error:', error);
         this.loading.set(false);
+        this.searching.set(false);
       }
     });
   }

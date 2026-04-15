@@ -22,11 +22,29 @@ export class DataService {
   getItems<TType extends ItemType>(
     type: TType,
     page: number,
-    limit: number
+    limit: number,
+    filters?: Record<string, unknown>
   ): Observable<PaginatedResponse<ItemModelByType[TType]>> {
-    const params = new HttpParams()
-      .set('page', page)
-      .set('limit', limit);
+    let params = new HttpParams()
+      .set('page', String(page))
+      .set('limit', String(limit));
+
+    if (filters && typeof filters === 'object') {
+      for (const key of Object.keys(filters)) {
+        const value = (filters as Record<string, unknown>)[key];
+
+        if (Array.isArray(value)) {
+          for (const v of value) {
+            params = params.append(`filter[${key}][]`, String(v));
+          }
+          continue;
+        }
+
+        if (value !== undefined && value !== null) {
+          params = params.append(`filter[${key}]`, String(value));
+        }
+      }
+    }
 
     return this.api
       .get<Record<string, unknown> | PaginatedResponse<Record<string, unknown>>>(`/${type}`, params)
