@@ -14,7 +14,12 @@
   </div>
 }
 
-<div class="table">
+<div class="table" [class.table--loading]="loading()">
+  @if (loading()) {
+    <div class="table__loading-overlay">
+      <div class="table__loading-indicator">Loading...</div>
+    </div>
+  }
   <div
     class="table__header"
     [style.grid-template-columns]="tableGridTemplateColumns()"

@@ -23,8 +23,3 @@
   flex: 1;
   min-height: 0;
 }
-
-.data-manager-page__loading {
-  padding: 32px;
-  font-size: 16px;
-}

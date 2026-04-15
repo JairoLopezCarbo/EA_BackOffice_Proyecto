@@ -1,51 +1,49 @@
-@if (loading()) {
-  <div class="data-manager-page__loading">Loading...</div>
-} @else {
-  <section class="data-manager-page">
-    <app-sidebar
-      [selectedType]="selectedType()"
-      [types]="typeOptions"
-      (typeChange)="onTypeChange($event)"
+<section class="data-manager-page">
+  <app-sidebar
+    [selectedType]="selectedType()"
+    [types]="typeOptions"
+    (typeChange)="onTypeChange($event)"
+  />
+
+  <div class="data-manager-page__content">
+    <app-search-bar
+      class="data-manager-page__search"
+      [placeholder]="searchPlaceholder()"
+      [value]="searchTerm()"
+      [searching]="searching()"
+      (valueChange)="onSearchTermChange($event)"
     />
 
-    <div class="data-manager-page__content">
-      <app-search-bar
-        class="data-manager-page__search"
-        [placeholder]="searchPlaceholder()"
-        [value]="searchTerm()"
-        [searching]="searching()"
-        (valueChange)="onSearchTermChange($event)"
-      />
+    <app-pagination
+      [page]="page()"
+      [limit]="limit()"
+      [total]="total()"
+      [totalPages]="totalPages()"
+      (pageChange)="onPageChange($event)"
+      (limitChange)="onLimitChange($event)"
+    />
 
-      <app-pagination
-        [page]="page()"
-        [limit]="limit()"
-        [total]="total()"
-        [totalPages]="totalPages()"
-        (pageChange)="onPageChange($event)"
-        (limitChange)="onLimitChange($event)"
-      />
-
-      <app-data-table
-        class="data-manager-page__table"
-        [items]="items()"
-        [previewColumns]="currentPreviewColumns()"
-        [actionConfig]="currentActionConfig()"
-        [editableFields]="currentEditableFields()"
-        [selectedIds]="selectedIds()"
-        [canAddItem]="canAddCurrentType()"
-        [addButtonLabel]="addButtonLabel()"
-        [inlineEditSavingItemId]="inlineEditSavingItemId()"
-        [inlineEditCompletedItemId]="inlineEditCompletedItemId()"
-        (selectedIdsChange)="onSelectedIdsChange($event)"
-        (deleteItem)="onDeleteItem($event)"
-        (deleteMany)="onDeleteMany($event)"
-        (toggleEnabled)="onToggleEnabled($event)"
-        (addItemClick)="onOpenAddItem()"
-        (inlineEditSubmit)="onInlineEditSubmit($event)"
-      />
-    </div>
-  </section>
+    <app-data-table
+      class="data-manager-page__table"
+      [items]="items()"
+      [previewColumns]="currentPreviewColumns()"
+      [actionConfig]="currentActionConfig()"
+      [editableFields]="currentEditableFields()"
+      [selectedIds]="selectedIds()"
+      [canAddItem]="canAddCurrentType()"
+      [addButtonLabel]="addButtonLabel()"
+      [inlineEditSavingItemId]="inlineEditSavingItemId()"
+      [inlineEditCompletedItemId]="inlineEditCompletedItemId()"
+      [loading]="loading()"
+      (selectedIdsChange)="onSelectedIdsChange($event)"
+      (deleteItem)="onDeleteItem($event)"
+      (deleteMany)="onDeleteMany($event)"
+      (toggleEnabled)="onToggleEnabled($event)"
+      (addItemClick)="onOpenAddItem()"
+      (inlineEditSubmit)="onInlineEditSubmit($event)"
+    />
+  </div>
+</section>
   <app-user-form-modal
     [open]="showUserModal()"
     [title]="modalTitle()"
@@ -78,4 +76,3 @@
     (submit)="onSubmitPoint()"
     (fieldChange)="onPointFieldChange($event.key, $event.value)"
   />
-}
