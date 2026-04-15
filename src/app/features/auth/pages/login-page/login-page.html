@@ -1,0 +1,32 @@
+<div class="login-shell">
+  <form class="login-card" (ngSubmit)="onSubmit()">
+    <h1>Backoffice login</h1>
+
+    <label for="email">Email</label>
+    <input
+      id="email"
+      type="email"
+      [(ngModel)]="email"
+      name="email"
+      required
+      autocomplete="email"
+    />
+
+    <label for="password">Password</label>
+    <input
+      id="password"
+      type="password"
+      [(ngModel)]="password"
+      name="password"
+      required
+      autocomplete="current-password"
+    />
+
+    <button type="submit" [disabled]="loading">
+      {{ loading ? 'Checking access...' : 'Log in' }}
+    </button>
+
+    <p class="info" *ngIf="loading">Verifying credentials and permissions...</p>
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+  </form>
+</div>
