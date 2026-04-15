@@ -8,6 +8,8 @@ import { UserFormModal } from '../../components/create-forms/user-form-modal/use
 import { RouteFormModal } from '../../components/create-forms/route-form-modal/route-form-modal';
 import { PointFormModal } from '../../components/create-forms/point-form-modal/point-form-modal';
 import { DataService } from '../../../../core/services/data';
+import { Router } from '@angular/router';
+import { AuthService } from '../../../../core/services/auth';
 import {
   CreatePointPayload,
   CreateRoutePayload,
@@ -48,6 +50,8 @@ import {
 })
 export class DataManagerPage implements OnInit {
   private dataService = inject(DataService);
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
 
   typeOptions: ItemTypeOption[] = ITEM_TYPE_OPTIONS;
 
@@ -165,6 +169,11 @@ export class DataManagerPage implements OnInit {
   });
 
   ngOnInit(): void {
+    if (!this.authService.isLoggedIn() || !this.authService.isAdmin()) {
+      this.router.navigateByUrl('/login');
+      return;
+    }
+
     this.loadItems();
   }
 
