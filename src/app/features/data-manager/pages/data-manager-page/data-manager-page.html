@@ -6,6 +6,15 @@
   />
 
   <div class="data-manager-page__content">
+    <button
+      type="button"
+      class="data-manager-page__logout"
+      [disabled]="loggingOut()"
+      (click)="onLogout()"
+    >
+      {{ loggingOut() ? 'Logging out...' : 'Logout' }}
+    </button>
+
     <app-search-bar
       class="data-manager-page__search"
       [placeholder]="searchPlaceholder()"
@@ -44,35 +53,36 @@
     />
   </div>
 </section>
-  <app-user-form-modal
-    [open]="showUserModal()"
-    [title]="modalTitle()"
-    [form]="userForm()"
-    [saving]="savingUser()"
-    [isEditing]="isEditingUser()"
-    (close)="onCloseUserModal()"
-    (submit)="onSubmitUser()"
-    (fieldChange)="onUserFieldChange($event.key, $event.value)"
-  />
 
-  <app-route-form-modal
-    [open]="showRouteModal()"
-    [title]="routeModalTitle()"
-    [form]="routeForm()"
-    [saving]="savingRoute()"
-    [isEditing]="isEditingRoute()"
-    (close)="onCloseRouteModal()"
-    (submit)="onSubmitRoute()"
-    (fieldChange)="onRouteFieldChange($event.key, $event.value)"
-  />
+<app-user-form-modal
+  [open]="showUserModal()"
+  [title]="modalTitle()"
+  [form]="userForm()"
+  [saving]="savingUser()"
+  [isEditing]="isEditingUser()"
+  (close)="onCloseUserModal()"
+  (submit)="onSubmitUser()"
+  (fieldChange)="onUserFieldChange($event.key, $event.value)"
+/>
 
-  <app-point-form-modal
-    [open]="showPointModal()"
-    [title]="pointModalTitle()"
-    [form]="pointForm()"
-    [saving]="savingPoint()"
-    [isEditing]="isEditingPoint()"
-    (close)="onClosePointModal()"
-    (submit)="onSubmitPoint()"
-    (fieldChange)="onPointFieldChange($event.key, $event.value)"
-  />
+<app-route-form-modal
+  [open]="showRouteModal()"
+  [title]="routeModalTitle()"
+  [form]="routeForm()"
+  [saving]="savingRoute()"
+  [isEditing]="isEditingRoute()"
+  (close)="onCloseRouteModal()"
+  (submit)="onSubmitRoute()"
+  (fieldChange)="onRouteFieldChange($event.key, $event.value)"
+/>
+
+<app-point-form-modal
+  [open]="showPointModal()"
+  [title]="pointModalTitle()"
+  [form]="pointForm()"
+  [saving]="savingPoint()"
+  [isEditing]="isEditingPoint()"
+  (close)="onClosePointModal()"
+  (submit)="onSubmitPoint()"
+  (fieldChange)="onPointFieldChange($event.key, $event.value)"
+/>
