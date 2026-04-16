@@ -1,26 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { AuthService } from './auth';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  private http = inject(HttpClient);
-  private baseUrl = 'http://localhost:1337';
+  private readonly http = inject(HttpClient);
+  private readonly authService = inject(AuthService);
+  private readonly baseUrl = 'http://localhost:1337';
 
   private getAuthOptions(params?: HttpParams) {
-    const rawSession = localStorage.getItem('ea_backoffice_auth');
-    let token: string | null = null;
-
-    if (rawSession) {
-      try {
-        const session = JSON.parse(rawSession);
-        token = session?.token ?? null;
-      } catch {
-        token = null;
-      }
-    }
+    const token = this.authService.getToken();
 
     const options: {
       params?: HttpParams;
