@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, finalize, map, of } from 'rxjs';
 
 interface AuthUser {
   id: string;
@@ -56,9 +56,19 @@ export class AuthService {
     );
   }
 
-  logout(): void {
-    localStorage.removeItem(this.storageKey);
+  logout(): Observable<void> {
+    return this.http.post<void>(
+      `${this.baseUrl}/auth/logout`,
+      {},
+      { withCredentials: true }
+    ).pipe(
+      catchError(() => of(void 0)),
+      finalize(() => {
+        localStorage.removeItem(this.storageKey);
+      })
+    );
   }
+
 
   getSession(): AuthSession | null {
     const raw = localStorage.getItem(this.storageKey);

@@ -11,6 +11,39 @@
   flex-direction: column;
   overflow: hidden;
   padding: 24px;
+  padding-top: 88px;
+  position: relative;
+}
+
+.data-manager-page__logout {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  border: 0;
+  border-radius: 12px;
+  background: #0f172a;
+  color: #ffffff;
+  padding: 12px 18px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.15s ease,
+    opacity 0.2s ease;
+}
+
+.data-manager-page__logout:hover:not(:disabled) {
+  background: #111827;
+}
+
+.data-manager-page__logout:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.data-manager-page__logout:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .data-manager-page__search {

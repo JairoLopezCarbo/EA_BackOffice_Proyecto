@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { finalize } from 'rxjs';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { DataTable } from '../../components/data-table/data-table';
 import { Pagination } from '../../components/pagination/pagination';
@@ -66,6 +67,7 @@ export class DataManagerPage implements OnInit {
   total = signal(0);
   totalPages = signal(0);
   searchTerm = signal('');
+  loggingOut = signal(false);
 
   showUserModal = signal(false);
   editingUserId = signal<string | null>(null);
@@ -80,7 +82,6 @@ export class DataManagerPage implements OnInit {
   editingPointId = signal<string | null>(null);
 
   savingPoint = signal(false);
-
 
   searching = signal(false);
   inlineEditSavingItemId = signal<string | null>(null);
@@ -177,6 +178,25 @@ export class DataManagerPage implements OnInit {
     this.loadItems();
   }
 
+  onLogout(): void {
+    if (this.loggingOut()) {
+      return;
+    }
+
+    this.loggingOut.set(true);
+
+    this.authService
+      .logout()
+      .pipe(
+        finalize(() => {
+          this.loggingOut.set(false);
+        })
+      )
+      .subscribe(() => {
+        this.router.navigateByUrl('/login');
+      });
+  }
+
   onTypeChange(type: ItemType): void {
     this.selectedType.set(type);
     this.selectedIds.set([]);
@@ -187,7 +207,6 @@ export class DataManagerPage implements OnInit {
     this.closeRouteModal();
     this.closePointModal();
     this.loadItems();
-    
   }
 
   onPageChange(page: number): void {
@@ -235,7 +254,6 @@ export class DataManagerPage implements OnInit {
   }
 
   private searchAcrossAllPages(): void {
-    // Global search loads all pages once and filters client-side for a simple UX.
     const term = this.searchTerm().trim().toLowerCase();
     const searchKey = this.getSearchKey();
     const itemType = this.selectedType();
@@ -391,14 +409,12 @@ export class DataManagerPage implements OnInit {
       return;
     }
 
-    const createPayload: CreateUserPayload = {
+    const createPayload = {
       name: form.name.trim(),
       surname: form.surname.trim(),
       username: form.username.trim(),
       email: form.email.trim(),
-      password: form.password.trim(),
-      enabled: form.enabled,
-      role: form.role
+      password: form.password.trim()
     };
 
     this.savingUser.set(true);
@@ -665,8 +681,6 @@ export class DataManagerPage implements OnInit {
 
     const type = this.selectedType();
 
-    // Keep update payload creation explicit per type to avoid hidden mapping side effects.
-
     if (type === 'users') {
       const payload = buildUserInlineUpdatePayload(changes);
       this.dataService.updateItem('users', itemId, payload).subscribe({
@@ -748,7 +762,6 @@ export class DataManagerPage implements OnInit {
     this.dataService.getItems(this.selectedType(), page, limit, filters).subscribe({
       next: (response) => {
         this.allItems.set(response.data);
-        // Render exactly what the backend returned (server-side filtered & paginated)
         this.items.set(response.data);
         this.page.set(Math.max(1, response.page));
         this.limit.set(Math.max(1, response.limit));
