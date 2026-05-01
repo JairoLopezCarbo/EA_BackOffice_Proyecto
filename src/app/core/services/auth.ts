@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, catchError, finalize, map, of } from 'rxjs';
+import { resolveApiBaseUrl } from '../config/api-url';
 
 interface AuthUser {
   id: string;
@@ -22,7 +23,7 @@ interface AuthSession {
 })
 export class AuthService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'http://localhost:1337';
+  private readonly baseUrl = resolveApiBaseUrl();
   private readonly storageKey = 'ea_backoffice_auth';
 
   private logoutTimer: ReturnType<typeof setTimeout> | null = null;

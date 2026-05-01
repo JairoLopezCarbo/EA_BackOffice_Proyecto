@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuthService } from './auth';
+import { resolveApiBaseUrl } from '../config/api-url';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,7 @@ import { AuthService } from './auth';
 export class ApiService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService);
-  private readonly baseUrl = 'http://localhost:1337';
+  private readonly baseUrl = resolveApiBaseUrl();
 
   private getAuthOptions(params?: HttpParams) {
     const token = this.authService.getToken();
