@@ -1,0 +1,146 @@
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 50;
+}
+
+.modal {
+  width: min(920px, 100%);
+  max-height: min(90vh, 900px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+}
+
+.modal__header,
+.modal__footer {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.modal__header {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal__body {
+  padding: 24px;
+  overflow: auto;
+  display: grid;
+  gap: 24px;
+}
+
+.modal__close,
+.btn {
+  border: 0;
+  cursor: pointer;
+}
+
+.modal__close {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-item {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: grid;
+  gap: 6px;
+}
+
+.summary-item__label,
+.change-card__label {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.summary-item__value {
+  color: #0f172a;
+  font-size: 15px;
+  word-break: break-word;
+}
+
+.changes-section h3 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+
+.changes-list {
+  display: grid;
+  gap: 12px;
+}
+
+.change-card {
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: grid;
+  gap: 10px;
+}
+
+.change-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: #0f172a;
+}
+
+.change-card__row {
+  display: grid;
+  gap: 4px;
+}
+
+.changes-empty {
+  margin: 0;
+  color: #64748b;
+}
+
+.modal__footer {
+  border-top: 1px solid #e5e7eb;
+  justify-content: flex-end;
+}
+
+.btn {
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.btn--primary {
+  background: #0f172a;
+  color: #ffffff;
+}
+
+@media (max-width: 720px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

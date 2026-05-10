@@ -8,6 +8,7 @@ import { SearchBar } from '../../components/search-bar/search-bar';
 import { UserFormModal } from '../../components/create-forms/user-form-modal/user-form-modal';
 import { RouteFormModal } from '../../components/create-forms/route-form-modal/route-form-modal';
 import { PointFormModal } from '../../components/create-forms/point-form-modal/point-form-modal';
+import { HistoryDetailsModal } from '../../components/history-details-modal/history-details-modal';
 import { DataService } from '../../../../core/services/data';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth';
@@ -22,6 +23,7 @@ import {
   ItemType,
   ItemTypeOption,
   ItemUiConfig,
+  HistoryItem,
   PointItem,
   RouteItem,
   UpdateUserPayload,
@@ -44,7 +46,8 @@ import {
     SearchBar,
     UserFormModal,
     RouteFormModal,
-    PointFormModal
+    PointFormModal,
+    HistoryDetailsModal
   ],
   templateUrl: './data-manager-page.html',
   styleUrl: './data-manager-page.css'
@@ -78,10 +81,11 @@ export class DataManagerPage implements OnInit {
   savingRoute = signal(false);
 
   showPointModal = signal(false);
-
   editingPointId = signal<string | null>(null);
-
   savingPoint = signal(false);
+
+  showHistoryDetailsModal = signal(false);
+  selectedHistoryItem = signal<HistoryItem | null>(null);
 
   searching = signal(false);
   inlineEditSavingItemId = signal<string | null>(null);
@@ -140,34 +144,40 @@ export class DataManagerPage implements OnInit {
   });
 
   searchPlaceholder = computed(() => {
-    const firstColumn = this.currentPreviewColumns()[0];
-    return firstColumn ? `Search by ${firstColumn.label.toLowerCase()}...` : 'Search...';
+    return this.currentTypeConfig().search.placeholder;
   });
 
   isUsersType = computed(() => this.selectedType() === 'users');
   isRoutesType = computed(() => this.selectedType() === 'routes');
+  isPointsType = computed(() => this.selectedType() === 'points');
+  isHistoryType = computed(() => this.selectedType() === 'history');
 
   isEditingUser = computed(() => this.editingUserId() !== null);
   isEditingRoute = computed(() => this.editingRouteId() !== null);
+  isEditingPoint = computed(() => this.editingPointId() !== null);
 
   modalTitle = computed(() => this.isEditingUser() ? 'Edit user' : 'Add user');
   routeModalTitle = computed(() => this.isEditingRoute() ? 'Edit route' : 'Add route');
-
-  isPointsType = computed(() => this.selectedType() === 'points');
-
-  isEditingPoint = computed(() => this.editingPointId() !== null);
 
   pointModalTitle = computed(() =>
     this.isEditingPoint() ? 'Edit point' : 'Add point'
   );
 
   canAddCurrentType = computed(() => {
-    return true;
+    if (this.isHistoryType()) {
+      return false;
+    }
+
+    return Object.values(this.currentActionConfig()).some(Boolean);
   });
 
   addButtonLabel = computed(() => {
-    return 'Add';
+    return this.currentTypeConfig().addButtonLabel;
   });
+
+  showSearchBar = computed(() => this.currentTypeConfig().search.enabled);
+
+  showHistoryDetailsButton = computed(() => this.isHistoryType());
 
   ngOnInit(): void {
     if (!this.authService.isLoggedIn() || !this.authService.isAdmin()) {
@@ -206,6 +216,7 @@ export class DataManagerPage implements OnInit {
     this.closeUserModal();
     this.closeRouteModal();
     this.closePointModal();
+    this.onCloseHistoryDetailsModal();
     this.loadItems();
   }
 
@@ -229,6 +240,10 @@ export class DataManagerPage implements OnInit {
   }
 
   onSearchTermChange(value: string): void {
+    if (!this.currentTypeConfig().search.enabled) {
+      return;
+    }
+
     this.searchTerm.set(value);
 
     if (!value.trim()) {
@@ -254,6 +269,10 @@ export class DataManagerPage implements OnInit {
   }
 
   private searchAcrossAllPages(): void {
+    if (!this.currentTypeConfig().search.enabled) {
+      return;
+    }
+
     const term = this.searchTerm().trim().toLowerCase();
     const searchKey = this.getSearchKey();
     const itemType = this.selectedType();
@@ -297,6 +316,10 @@ export class DataManagerPage implements OnInit {
   }
 
   onOpenAddItem(): void {
+    if (this.isHistoryType()) {
+      return;
+    }
+
     if (this.selectedType() === 'users') {
       this.onOpenAddUser();
       return;
@@ -313,6 +336,10 @@ export class DataManagerPage implements OnInit {
   }
 
   onOpenEditItem(id: string): void {
+    if (this.isHistoryType()) {
+      return;
+    }
+
     if (this.selectedType() === 'users') {
       this.onOpenEditUser(id);
       return;
@@ -409,7 +436,7 @@ export class DataManagerPage implements OnInit {
       return;
     }
 
-    const createPayload = {
+    const createPayload: CreateUserPayload = {
       name: form.name.trim(),
       surname: form.surname.trim(),
       username: form.username.trim(),
@@ -671,6 +698,10 @@ export class DataManagerPage implements OnInit {
   onInlineEditSubmit(event: { itemId: string; changes: Record<string, string> }): void {
     const { itemId, changes } = event;
 
+    if (this.isHistoryType()) {
+      return;
+    }
+
     if (Object.keys(changes).length === 0) {
       this.inlineEditCompletedItemId.set(itemId);
       return;
@@ -713,18 +744,20 @@ export class DataManagerPage implements OnInit {
       return;
     }
 
-    const payload = buildPointInlineUpdatePayload(changes);
-    this.dataService.updateItem('points', itemId, payload).subscribe({
-      next: () => {
-        this.inlineEditSavingItemId.set(null);
-        this.inlineEditCompletedItemId.set(itemId);
-        this.loadItems();
-      },
-      error: (error) => {
-        console.error('Inline edit point error:', error);
-        this.inlineEditSavingItemId.set(null);
-      }
-    });
+    if (type === 'points') {
+      const payload = buildPointInlineUpdatePayload(changes);
+      this.dataService.updateItem('points', itemId, payload).subscribe({
+        next: () => {
+          this.inlineEditSavingItemId.set(null);
+          this.inlineEditCompletedItemId.set(itemId);
+          this.loadItems();
+        },
+        error: (error) => {
+          console.error('Inline edit point error:', error);
+          this.inlineEditSavingItemId.set(null);
+        }
+      });
+    }
   }
 
   onToggleEnabled(itemId: string): void {
@@ -733,6 +766,26 @@ export class DataManagerPage implements OnInit {
     if (item) {
       this.toggleEnabled(item);
     }
+  }
+
+  onViewHistoryDetails(itemId: string): void {
+    if (!this.isHistoryType()) {
+      return;
+    }
+
+    const item = this.items().find((history): history is HistoryItem => history._id === itemId);
+
+    if (!item) {
+      return;
+    }
+
+    this.selectedHistoryItem.set(item);
+    this.showHistoryDetailsModal.set(true);
+  }
+
+  onCloseHistoryDetailsModal(): void {
+    this.showHistoryDetailsModal.set(false);
+    this.selectedHistoryItem.set(null);
   }
 
   private closeUserModal(): void {
@@ -779,6 +832,11 @@ export class DataManagerPage implements OnInit {
   }
 
   private applyLocalFilter(): void {
+    if (!this.currentTypeConfig().search.enabled) {
+      this.items.set(this.allItems());
+      return;
+    }
+
     const term = this.searchTerm().trim().toLowerCase();
     const sourceItems = this.allItems();
     const searchKey = this.getSearchKey();
@@ -797,8 +855,7 @@ export class DataManagerPage implements OnInit {
   }
 
   private getSearchKey(): string {
-    const firstColumn = this.currentPreviewColumns()[0];
-    return firstColumn?.key ?? '';
+    return this.currentTypeConfig().search.key;
   }
 
   private getItemValueByKey(item: ItemModel, key: string): unknown {
