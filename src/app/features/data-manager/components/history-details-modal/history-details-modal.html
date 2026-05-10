@@ -1,0 +1,83 @@
+@if (open() && item()) {
+  <div class="modal-backdrop" (click)="onClose()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2>History details</h2>
+        <button type="button" class="modal__close" (click)="onClose()">×</button>
+      </div>
+
+      <div class="modal__body">
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span class="summary-item__label">History ID</span>
+            <span class="summary-item__value">{{ item()?._id }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-item__label">Action</span>
+            <span class="summary-item__value">{{ item()?.action }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-item__label">Entity</span>
+            <span class="summary-item__value">{{ item()?.entity }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-item__label">Entity ID</span>
+            <span class="summary-item__value">{{ item()?.entityId || '-' }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-item__label">Created at</span>
+            <span class="summary-item__value">{{ item()?.createdAt }}</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-item__label">Updated at</span>
+            <span class="summary-item__value">{{ item()?.updatedAt }}</span>
+          </div>
+        </div>
+
+        <div class="changes-section">
+          <h3>Changes</h3>
+
+          @if (item()?.changes?.length) {
+            <div class="changes-list">
+              @for (change of item()!.changes; track change._id) {
+                <article class="change-card">
+                  <div class="change-card__header">
+                    <strong>{{ change.fieldName }}</strong>
+                    <span>{{ change.changedAt }}</span>
+                  </div>
+
+                  <div class="change-card__row">
+                    <span class="change-card__label">Change ID</span>
+                    <span>{{ change._id }}</span>
+                  </div>
+                  <div class="change-card__row">
+                    <span class="change-card__label">History ID</span>
+                    <span>{{ change.historyId }}</span>
+                  </div>
+                  <div class="change-card__row">
+                    <span class="change-card__label">Object ID</span>
+                    <span>{{ change.objectId }}</span>
+                  </div>
+                  <div class="change-card__row">
+                    <span class="change-card__label">Before</span>
+                    <span>{{ change.beforeValue || '-' }}</span>
+                  </div>
+                  <div class="change-card__row">
+                    <span class="change-card__label">After</span>
+                    <span>{{ change.afterValue || '-' }}</span>
+                  </div>
+                </article>
+              }
+            </div>
+          } @else {
+            <p class="changes-empty">No changes available.</p>
+          }
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn--primary" (click)="onClose()">Close</button>
+      </div>
+    </div>
+  </div>
+}

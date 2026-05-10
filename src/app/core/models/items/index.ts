@@ -1,4 +1,5 @@
 import { CreatePointPayload, PointItem, UpdatePointPayload } from './Point';
+import { CreateHistoryPayload, HistoryChange, HistoryItem, UpdateHistoryPayload } from './History';
 import { CreateRoutePayload, RouteItem, UpdateRoutePayload } from './Route';
 import { CreateUserPayload, UpdateUserPayload, UserItem } from './User';
 
@@ -6,6 +7,10 @@ export type {
   PointItem,
   CreatePointPayload,
   UpdatePointPayload,
+  HistoryItem,
+  HistoryChange,
+  CreateHistoryPayload,
+  UpdateHistoryPayload,
   RouteItem,
   CreateRoutePayload,
   UpdateRoutePayload,
@@ -25,6 +30,7 @@ export interface ItemModelByType {
   users: UserItem;
   routes: RouteItem;
   points: PointItem;
+  history: HistoryItem;
 }
 
 export type ItemType = keyof ItemModelByType;
@@ -65,12 +71,14 @@ export interface CreatePayloadByType {
   users: CreateUserPayload;
   routes: CreateRoutePayload;
   points: CreatePointPayload;
+  history: CreateHistoryPayload;
 }
 
 export interface UpdatePayloadByType {
   users: UpdateUserPayload;
   routes: UpdateRoutePayload;
   points: UpdatePointPayload;
+  history: UpdateHistoryPayload;
 }
 
 export const ITEM_UI_CONFIG: Record<ItemType, ItemUiConfig> = {
@@ -134,6 +142,27 @@ export const ITEM_UI_CONFIG: Record<ItemType, ItemUiConfig> = {
       placeholder: 'Search...'
     },
     editableFields: ['name', 'description', 'latitude', 'longitude', 'image', 'routeId', 'index']
+  },
+  history: {
+    label: 'History',
+    addButtonLabel: 'View history',
+    previewColumns: [
+      { key: '_id', label: 'HISTORY ID' },
+      { key: 'action', label: 'ACTION' },
+      { key: 'entity', label: 'MODEL' },
+      { key: 'entityId', label: 'Object ID' },
+    ],
+    actions: {
+      edit: false,
+      delete: false,
+      toggleEnabled: false
+    },
+    search: {
+      enabled: false,
+      key: '',
+      placeholder: 'Search history...'
+    },
+    editableFields: []
   }
 };
 
@@ -152,6 +181,10 @@ export function normalizeItemByType<TType extends ItemType>(
 
   if (type === 'routes') {
     return normalizeRoute(value) as ItemModelByType[TType];
+  }
+
+  if (type === 'history') {
+    return normalizeHistory(value) as ItemModelByType[TType];
   }
 
   return normalizePoint(value) as ItemModelByType[TType];
@@ -213,6 +246,87 @@ function normalizePoint(value: Record<string, unknown>): PointItem {
   };
 }
 
+function normalizeHistory(value: Record<string, unknown>): HistoryItem {
+  const id = getItemId(value);
+  const action = getStringValue([value['action']], 'CREATE') as HistoryItem['action'];
+  const entity = getStringValue([value['entity']], 'USER') as HistoryItem['entity'];
+  const changes = getArrayValue<Record<string, unknown>>(value['changes'], []).map(
+    (change) => normalizeHistoryChange(change)
+  );
+  const entityId = getStringValue(
+    [changes[0]?.objectId, value['entityId'], value['objectId']],
+    ''
+  );
+  const createdAt = getStringValue([value['createdAt']], new Date(0).toISOString());
+  const updatedAt = getStringValue([value['updatedAt']], createdAt);
+
+  return {
+    ...value,
+    _id: id,
+    name: `${action} ${entity}`,
+    action,
+    entity,
+    entityId,
+    changes,
+    createdAt,
+    updatedAt
+  };
+}
+
+function normalizeHistoryChange(value: Record<string, unknown>): HistoryChange {
+  const fieldName = getStringValue([value['fieldName']], '');
+
+  return {
+    _id: getStringValue([value['_id'], value['id']], ''),
+    historyId: getStringValue([value['historyId']], ''),
+    objectId: getStringValue([value['objectId']], ''),
+    fieldName,
+    beforeValue: normalizeHistoryChangeValue(value['beforeValue'], fieldName),
+    afterValue: normalizeHistoryChangeValue(value['afterValue'], fieldName),
+    changedAt: getStringValue([value['changedAt']], new Date(0).toISOString())
+  };
+}
+
+function normalizeHistoryChangeValue(rawValue: unknown, fieldName: string): string {
+  const normalizedField = fieldName.trim().toLowerCase();
+
+  if (normalizedField === 'enabled') {
+    if (rawValue === true) {
+      return 'enabled';
+    }
+
+    if (rawValue === false) {
+      return 'disabled';
+    }
+
+    if (typeof rawValue === 'string') {
+      const normalizedValue = rawValue.trim().toLowerCase();
+
+      if (normalizedValue === 'true' || normalizedValue === 'enabled') {
+        return 'enabled';
+      }
+
+      if (normalizedValue === 'false' || normalizedValue === 'disabled') {
+        return 'disabled';
+      }
+    }
+  }
+
+  if (typeof rawValue === 'boolean') {
+    return rawValue ? 'true' : 'false';
+  }
+
+  if (typeof rawValue === 'number' && Number.isFinite(rawValue)) {
+    return String(rawValue);
+  }
+
+  if (typeof rawValue === 'string') {
+    return rawValue.trim();
+  }
+
+  return '';
+}
+
 function getItemId(value: Record<string, unknown>): string {
   return getStringValue([value['_id'], value['id']], '');
 }
@@ -225,6 +339,14 @@ function getStringArray(value: unknown): string[] {
   return value
     .map((item) => getStringValue([item], ''))
     .filter((item) => item.trim().length > 0);
+}
+
+function getArrayValue<T>(value: unknown, fallback: T[]): T[] {
+  if (Array.isArray(value)) {
+    return value as T[];
+  }
+
+  return fallback;
 }
 
 function getStringValue(values: unknown[], fallback: string): string {
