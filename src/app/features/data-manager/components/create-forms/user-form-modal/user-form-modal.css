@@ -1,7 +1,7 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(17, 24, 39, 0.45);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -13,9 +13,9 @@
   width: 100%;
   max-width: 760px;
   max-height: calc(100vh - 48px);
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  background: var(--color-surface);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-strong);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -27,7 +27,7 @@
   justify-content: space-between;
   gap: 12px;
   padding: 20px 24px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .modal__body {
@@ -55,7 +55,7 @@
 .form-field span {
   font-size: 14px;
   font-weight: 600;
-  color: #374151;
+  color: var(--color-text-subtle);
 }
 
 .form-field input[type='text'],
@@ -65,8 +65,8 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
+  border: 1px solid var(--color-border-alt);
+  border-radius: var(--radius-md);
   padding: 12px 14px;
   font-size: 15px;
   outline: none;
@@ -76,8 +76,8 @@
 .form-field input[type='email']:focus,
 .form-field input[type='password']:focus,
 .form-field select:focus {
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: var(--color-accent);
+  box-shadow: var(--focus-ring);
 }
 
 .form-field--checkbox {
@@ -87,7 +87,7 @@
 }
 
 .modal__footer {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-border);
   display: flex;
   justify-content: flex-end;
   gap: 12px;
@@ -96,7 +96,7 @@
 
 .btn {
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 12px 16px;
   font-size: 15px;
   font-weight: 600;
@@ -104,13 +104,13 @@
 }
 
 .btn--secondary {
-  background: #e5e7eb;
-  color: #111827;
+  background: var(--color-surface-alt);
+  color: var(--color-text-contrast);
 }
 
 .btn--primary {
-  background: #2563eb;
-  color: #ffffff;
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
 }
 
 .btn:disabled,

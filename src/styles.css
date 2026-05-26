@@ -1,3 +1,5 @@
+@import './theme.css';
+
 /* You can add global styles to this file, and also import other style files */
 
 html,
@@ -5,6 +7,16 @@ body {
 	height: 100%;
 	margin: 0;
 	overflow: hidden;
+	background: var(--color-bg);
+	color: var(--color-text);
+	font-family: var(--font-sans);
+}
+
+button,
+input,
+select,
+textarea {
+	font-family: var(--font-sans);
 }
 
 app-root {

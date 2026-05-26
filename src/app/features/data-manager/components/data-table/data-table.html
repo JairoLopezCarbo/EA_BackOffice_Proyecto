@@ -57,6 +57,7 @@
             [class.table__row--action-status]="isStatusAction(item)"
             [class.table__row--action-delete]="isDeleteAction(item)"
             [style.grid-template-columns]="tableGridTemplateColumns()"
+            [class.table__row--expanded]="expandedRowKey === getRowKey(item._id, rowIndex)"
             (click)="toggleExpand(item._id, rowIndex)"
           >
             <div class="table__col table__col--check" (click)="$event.stopPropagation()">
