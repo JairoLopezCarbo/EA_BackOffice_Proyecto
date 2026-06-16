@@ -4,6 +4,7 @@ import { HistoryItem } from '../../../../core/models/items';
 
 @Component({
   selector: 'app-history-details-modal',
+  standalone: true,
   imports: [CommonModule],
   templateUrl: './history-details-modal.html',
   styleUrl: './history-details-modal.css',

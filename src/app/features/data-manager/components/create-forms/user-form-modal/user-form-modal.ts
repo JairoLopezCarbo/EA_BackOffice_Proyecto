@@ -6,7 +6,6 @@ import { UserFormValue } from '../../../models/forms';
   selector: 'app-user-form-modal',
   imports: [FormsModule],
   templateUrl: './user-form-modal.html',
-  styleUrl: './user-form-modal.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserFormModal {

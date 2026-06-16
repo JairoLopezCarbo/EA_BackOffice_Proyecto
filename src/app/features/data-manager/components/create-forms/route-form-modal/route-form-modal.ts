@@ -6,7 +6,6 @@ import { RouteFormValue } from '../../../models/forms';
   selector: 'app-route-form-modal',
   imports: [FormsModule],
   templateUrl: './route-form-modal.html',
-  styleUrl: './route-form-modal.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RouteFormModal {
