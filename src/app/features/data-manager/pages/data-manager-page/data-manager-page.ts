@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { finalize } from 'rxjs';
+import { catchError, finalize, forkJoin, map, of } from 'rxjs';
 import { Sidebar } from '../../components/sidebar/sidebar';
 import { DataTable } from '../../components/data-table/data-table';
 import { Pagination } from '../../components/pagination/pagination';
@@ -71,6 +71,13 @@ export class DataManagerPage implements OnInit {
   totalPages = signal(0);
   searchTerm = signal('');
   loggingOut = signal(false);
+  entityCountsLoading = signal(false);
+  entityCounts = signal<Record<ItemType, number>>({
+    users: 0,
+    routes: 0,
+    points: 0,
+    history: 0
+  });
 
   showUserModal = signal(false);
   editingUserId = signal<string | null>(null);
@@ -179,12 +186,26 @@ export class DataManagerPage implements OnInit {
 
   showHistoryDetailsButton = computed(() => this.isHistoryType());
 
+  entityCountCards = computed(() => {
+    const counts = this.entityCounts();
+
+    return this.typeOptions.map((type) => ({
+      ...type,
+      count: counts[type.value]
+    }));
+  });
+
+  totalEntityCount = computed(() => {
+    return Object.values(this.entityCounts()).reduce((sum, count) => sum + count, 0);
+  });
+
   ngOnInit(): void {
     if (!this.authService.isLoggedIn() || !this.authService.isAdmin()) {
       this.router.navigateByUrl('/login');
       return;
     }
 
+    this.loadEntityCounts();
     this.loadItems();
   }
 
@@ -450,6 +471,7 @@ export class DataManagerPage implements OnInit {
         this.savingUser.set(false);
         this.closeUserModal();
         this.page.set(1);
+        this.loadEntityCounts();
         this.loadItems();
       },
       error: (error) => {
@@ -553,6 +575,7 @@ export class DataManagerPage implements OnInit {
         this.savingRoute.set(false);
         this.closeRouteModal();
         this.page.set(1);
+        this.loadEntityCounts();
         this.loadItems();
       },
       error: (error) => {
@@ -654,6 +677,7 @@ export class DataManagerPage implements OnInit {
         this.savingPoint.set(false);
         this.closePointModal();
         this.page.set(1);
+        this.loadEntityCounts();
         this.loadItems();
       },
       error: (error) => {
@@ -670,6 +694,7 @@ export class DataManagerPage implements OnInit {
     this.dataService.deleteItem(this.selectedType(), id).subscribe({
       next: () => {
         this.selectedIds.update((current) => current.filter((selectedId) => selectedId !== id));
+        this.loadEntityCounts();
         this.loadItems();
       },
       error: (error) => console.error('Delete item error:', error)
@@ -685,6 +710,7 @@ export class DataManagerPage implements OnInit {
     this.dataService.deleteMany(this.selectedType(), ids).subscribe({
       next: () => {
         this.selectedIds.update((current) => current.filter((selectedId) => !ids.includes(selectedId)));
+        this.loadEntityCounts();
         this.loadItems();
       },
       error: (error) => console.error('Bulk delete error:', error)
@@ -820,6 +846,7 @@ export class DataManagerPage implements OnInit {
         this.limit.set(Math.max(1, response.limit));
         this.total.set(Math.max(0, response.total));
         this.totalPages.set(Math.max(1, response.totalPages));
+        this.updateEntityCount(this.selectedType(), response.total);
         this.loading.set(false);
         this.searching.set(false);
       },
@@ -880,5 +907,39 @@ export class DataManagerPage implements OnInit {
       next: () => this.loadItems(),
       error: (error) => console.error('Toggle enabled error:', error)
     });
+  }
+
+  private loadEntityCounts(): void {
+    this.entityCountsLoading.set(true);
+    const countLimit = this.limit();
+
+    const requests = this.typeOptions.map((type) =>
+      this.dataService.getItems(type.value, 1, countLimit).pipe(
+        map((response) => [type.value, Math.max(0, response.total, response.data.length)] as const),
+        catchError((error) => {
+          console.error(`Load ${type.value} count error:`, error);
+          return of([type.value, this.entityCounts()[type.value]] as const);
+        })
+      )
+    );
+
+    forkJoin(requests)
+      .pipe(finalize(() => this.entityCountsLoading.set(false)))
+      .subscribe((entries) => {
+        const nextCounts = { ...this.entityCounts() };
+
+        for (const [type, count] of entries) {
+          nextCounts[type] = count;
+        }
+
+        this.entityCounts.set(nextCounts);
+      });
+  }
+
+  private updateEntityCount(type: ItemType, count: number): void {
+    this.entityCounts.update((current) => ({
+      ...current,
+      [type]: Math.max(0, count)
+    }));
   }
 }

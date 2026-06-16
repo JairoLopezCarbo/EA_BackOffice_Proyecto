@@ -15,6 +15,29 @@
       {{ loggingOut() ? 'Logging out...' : 'Logout' }}
     </button>
 
+    <section class="data-manager-page__summary" aria-label="General entity count">
+      <article class="data-manager-page__summary-total">
+        <span class="data-manager-page__summary-label">Total records</span>
+        <strong class="data-manager-page__summary-value">
+          {{ entityCountsLoading() ? '...' : totalEntityCount() }}
+        </strong>
+      </article>
+
+      <div class="data-manager-page__summary-grid">
+        @for (item of entityCountCards(); track item.value) {
+          <article
+            class="data-manager-page__summary-card"
+            [class.data-manager-page__summary-card--active]="selectedType() === item.value"
+          >
+            <span class="data-manager-page__summary-label">{{ item.label }}</span>
+            <strong class="data-manager-page__summary-value">
+              {{ entityCountsLoading() ? '...' : item.count }}
+            </strong>
+          </article>
+        }
+      </div>
+    </section>
+
     @if (showSearchBar()) {
       <app-search-bar
         class="data-manager-page__search"
@@ -25,16 +48,14 @@
       />
     }
 
-    @if (!isHistoryType()) {
-      <app-pagination
-        [page]="page()"
-        [limit]="limit()"
-        [total]="total()"
-        [totalPages]="totalPages()"
-        (pageChange)="onPageChange($event)"
-        (limitChange)="onLimitChange($event)"
-      />
-    }
+    <app-pagination
+      [page]="page()"
+      [limit]="limit()"
+      [total]="total()"
+      [totalPages]="totalPages()"
+      (pageChange)="onPageChange($event)"
+      (limitChange)="onLimitChange($event)"
+    />
 
     <app-data-table
       class="data-manager-page__table"
