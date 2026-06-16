@@ -1015,7 +1015,6 @@ export class DataManagerPage implements OnInit {
         this.limit.set(Math.max(1, response.limit));
         this.total.set(Math.max(0, response.total));
         this.totalPages.set(Math.max(1, response.totalPages));
-        this.updateEntityCount(requestedType, response.total);
         this.loading.set(false);
         this.searching.set(false);
       },
@@ -1111,10 +1110,4 @@ export class DataManagerPage implements OnInit {
       });
   }
 
-  private updateEntityCount(type: ItemType, count: number): void {
-    this.entityCounts.update((current) => ({
-      ...current,
-      [type]: Math.max(0, count),
-    }));
-  }
 }
