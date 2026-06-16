@@ -31,3 +31,14 @@ export type PointFormValue = {
   routeId: string;
   index: number | null;
 };
+
+export type ReviewFormValue = {
+  userId: string;
+  routeId: string;
+  title: string;
+  comment: string;
+  ratings: {
+    label: string;
+    score: number | null;
+  }[];
+};

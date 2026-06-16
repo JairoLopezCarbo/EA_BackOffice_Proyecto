@@ -1,7 +1,8 @@
 import {
   UpdatePointPayload,
   UpdateRoutePayload,
-  UpdateUserPayload
+  UpdateUserPayload,
+  UpdateReviewPayload,
 } from '../../../core/models/items';
 
 export function buildUserInlineUpdatePayload(changes: Record<string, string>): UpdateUserPayload {
@@ -12,7 +13,8 @@ export function buildUserInlineUpdatePayload(changes: Record<string, string>): U
   if ('username' in changes) payload.username = changes['username'].trim();
   if ('email' in changes) payload.email = changes['email'].trim();
   if ('enabled' in changes) payload.enabled = changes['enabled'].trim().toLowerCase() === 'true';
-  if ('role' in changes) payload.role = changes['role'].trim().toLowerCase() === 'admin' ? 'admin' : 'user';
+  if ('role' in changes)
+    payload.role = changes['role'].trim().toLowerCase() === 'admin' ? 'admin' : 'user';
   if ('password' in changes && changes['password'].trim().length > 0) {
     payload.password = changes['password'].trim();
   }
@@ -77,6 +79,46 @@ export function buildPointInlineUpdatePayload(changes: Record<string, string>): 
   if ('index' in changes) {
     const value = Number(changes['index']);
     if (Number.isFinite(value)) payload.index = value;
+  }
+
+  return payload;
+}
+
+export function buildReviewInlineUpdatePayload(
+  changes: Record<string, string>,
+): UpdateReviewPayload {
+  const payload: UpdateReviewPayload = {};
+
+  if ('title' in changes) payload.title = changes['title'].trim();
+
+  if ('comment' in changes) payload.comment = changes['comment'].trim();
+
+  if ('userId' in changes) payload.userId = changes['userId'].trim();
+
+  if ('routeId' in changes) payload.routeId = changes['routeId'].trim();
+
+  if ('ratings' in changes) {
+    try {
+      const ratings = JSON.parse(changes['ratings']);
+      if (Array.isArray(ratings)) {
+        payload.ratings = ratings
+          .map((rating) => {
+            if (
+              rating &&
+              typeof rating.label === 'string' &&
+              typeof rating.score === 'number' &&
+              Number.isFinite(rating.score)
+            ) {
+              return {
+                label: rating.label.trim(),
+                score: rating.score,
+              };
+            }
+            return null;
+          })
+          .filter((rating): rating is { label: string; score: number } => rating !== null);
+      }
+    } catch (error) {}
   }
 
   return payload;

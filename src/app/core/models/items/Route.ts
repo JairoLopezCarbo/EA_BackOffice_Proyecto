@@ -9,6 +9,8 @@ export interface RouteItem {
   distance: number;
   duration: number;
   difficulty: RouteDifficulty;
+  ratingAverage?: number;
+  reviewsCount?: number;
   tags: string[];
   userId: string;
   createdAt?: string;

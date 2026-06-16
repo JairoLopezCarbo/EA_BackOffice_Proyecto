@@ -121,3 +121,14 @@
   [item]="selectedHistoryItem()"
   (close)="onCloseHistoryDetailsModal()"
 />
+
+<app-review-form-modal
+  [open]="showReviewModal()"
+  [title]="reviewModalTitle()"
+  [form]="reviewForm()"
+  [saving]="savingReview()"
+  [isEditing]="isEditingReview()"
+  (close)="onCloseReviewModal()"
+  (submit)="onSubmitReview()"
+  (fieldChange)="onReviewFieldChange($event.key, $event.value)"
+/>
