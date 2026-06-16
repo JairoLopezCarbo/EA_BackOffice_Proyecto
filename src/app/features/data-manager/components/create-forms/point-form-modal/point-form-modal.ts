@@ -6,7 +6,6 @@ import { PointFormValue } from '../../../models/forms';
   selector: 'app-point-form-modal',
   imports: [FormsModule],
   templateUrl: './point-form-modal.html',
-  styleUrl: './point-form-modal.css',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PointFormModal {

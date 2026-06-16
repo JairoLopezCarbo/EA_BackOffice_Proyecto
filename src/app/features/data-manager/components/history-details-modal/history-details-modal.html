@@ -1,12 +1,12 @@
 @if (open() && item()) {
-  <div class="modal-backdrop" (click)="onClose()">
-    <div class="modal" (click)="$event.stopPropagation()">
+  <div class="modal-backdrop modal-backdrop--strong" (click)="onClose()">
+    <div class="modal modal--wide" (click)="$event.stopPropagation()">
       <div class="modal__header">
         <h2>History details</h2>
-        <button type="button" class="modal__close" (click)="onClose()">×</button>
+        <button type="button" class="modal__close modal__close--filled" (click)="onClose()">×</button>
       </div>
 
-      <div class="modal__body">
+      <div class="modal__body modal__body--spacious">
         <div class="summary-grid">
           <div class="summary-item">
             <span class="summary-item__label">History ID</span>
@@ -76,7 +76,7 @@
       </div>
 
       <div class="modal__footer">
-        <button type="button" class="btn btn--primary" (click)="onClose()">Close</button>
+        <button type="button" class="btn btn--primary btn--compact" (click)="onClose()">Close</button>
       </div>
     </div>
   </div>
