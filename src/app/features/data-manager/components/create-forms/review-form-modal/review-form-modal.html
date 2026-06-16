@@ -1,0 +1,85 @@
+@if (open()) {
+  <div class="modal-backdrop" (click)="onClose()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal__header">
+        <h2>{{ title() }}</h2>
+        <button type="button" class="modal__close" [disabled]="saving()" (click)="onClose()">×</button>
+      </div>
+
+      <div class="modal__body">
+        <label class="form-field">
+          <span>Title</span>
+          <input type="text" [ngModel]="form().title" (ngModelChange)="onTextFieldChange('title', $event)" />
+        </label>
+
+        <label class="form-field">
+          <span>Comment</span>
+          <textarea [ngModel]="form().comment" (ngModelChange)="onTextFieldChange('comment', $event)"></textarea>
+        </label>
+
+        <label class="form-field">
+          <span>User Id</span>
+          <input type="text" [ngModel]="form().userId" (ngModelChange)="onTextFieldChange('userId', $event)" />
+        </label>
+
+        <label class="form-field">
+          <span>Route Id</span>
+          <input type="text" [ngModel]="form().routeId" (ngModelChange)="onTextFieldChange('routeId', $event)" />
+        </label>
+        <div class="form-field">
+          <div class="ratings-header">
+            <span>Ratings</span>
+            <button
+              type="button"
+              class="btn btn--secondary btn--small"
+              [disabled]="saving()"
+              (click)="onAddRating()"
+            >
+              Add rating
+            </button>
+          </div>
+
+          <div class="ratings-list">
+            @for (rating of form().ratings; track $index) {
+              <div class="rating-row">
+                <input
+                  type="text"
+                  placeholder="Label"
+                  [ngModel]="rating.label"
+                  (ngModelChange)="onRatingLabelChange($index, $event)"
+                />
+
+                <input
+                  type="number"
+                  min="0"
+                  max="5"
+                  step="1"
+                  placeholder="Score"
+                  [ngModel]="rating.score"
+                  (ngModelChange)="onRatingScoreChange($index, $event)"
+                />
+
+                <button
+                  type="button"
+                  class="btn btn--danger btn--small"
+                  [disabled]="saving()"
+                  (click)="onRemoveRating($index)"
+                >
+                  Remove
+                </button>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button type="button" class="btn btn--secondary" [disabled]="saving()" (click)="onClose()">Cancel</button>
+
+        <button type="button" class="btn btn--primary" [disabled]="saving()" (click)="onSubmit()">
+          {{ saving() ? 'Saving...' : (isEditing() ? 'Save changes' : 'Create route') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

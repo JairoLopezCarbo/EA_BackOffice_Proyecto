@@ -8,7 +8,7 @@ import { ItemActionButtons } from '../item-action-buttons/item-action-buttons';
   imports: [CommonModule, ItemActionButtons],
   templateUrl: './data-table.html',
   styleUrl: './data-table.css',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DataTable {
   items = input<ItemModelBase[]>([]);
@@ -16,7 +16,7 @@ export class DataTable {
   actionConfig = input<ItemActionConfig>({
     edit: true,
     delete: true,
-    toggleEnabled: false
+    toggleEnabled: false,
   });
   showDetailsAction = input(false);
   detailsActionLabel = input('View details');
@@ -154,7 +154,7 @@ export class DataTable {
     const changes = this.getInlineEditChanges();
     this.inlineEditSubmit.emit({
       itemId: this.editingItemId,
-      changes
+      changes,
     });
   }
 
@@ -246,7 +246,7 @@ export class DataTable {
   getObjectEntries(item: ItemModelBase): Array<{ key: string; value: unknown }> {
     return Object.entries(item).map(([key, value]) => ({
       key,
-      value: this.normalizeDetailValue(value)
+      value: this.normalizeDetailValue(value),
     }));
   }
 
@@ -309,15 +309,46 @@ export class DataTable {
     }
 
     if (Array.isArray(value)) {
-      const ids = value
-        .map((item) => this.findNestedObjectId(item))
-        .filter((id): id is string => typeof id === 'string' && id.length > 0);
+      if (value.length === 0) {
+        return '-';
+      }
 
-      return ids.length > 0 ? ids.join(', ') : '-';
+      return value
+        .map((item) => {
+          if (item === null || item === undefined) {
+            return '-';
+          }
+
+          if (typeof item === 'object' && !Array.isArray(item)) {
+            const objectItem = item as Record<string, unknown>;
+
+            if (
+              typeof objectItem['label'] === 'string' &&
+              (typeof objectItem['score'] === 'number' || typeof objectItem['score'] === 'string')
+            ) {
+              return `${objectItem['label']}: ${objectItem['score']}`;
+            }
+
+            const nestedId = this.findNestedObjectId(objectItem);
+            return nestedId ?? JSON.stringify(objectItem);
+          }
+
+          return String(item);
+        })
+        .join(', ');
     }
 
     if (typeof value === 'object') {
-      return this.findNestedObjectId(value) ?? '-';
+      const objectValue = value as Record<string, unknown>;
+
+      if (
+        typeof objectValue['label'] === 'string' &&
+        (typeof objectValue['score'] === 'number' || typeof objectValue['score'] === 'string')
+      ) {
+        return `${objectValue['label']}: ${objectValue['score']}`;
+      }
+
+      return this.findNestedObjectId(objectValue) ?? '-';
     }
 
     if (typeof value === 'boolean') {

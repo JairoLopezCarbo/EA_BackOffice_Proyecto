@@ -9,6 +9,7 @@ import { UserFormModal } from '../../components/create-forms/user-form-modal/use
 import { RouteFormModal } from '../../components/create-forms/route-form-modal/route-form-modal';
 import { PointFormModal } from '../../components/create-forms/point-form-modal/point-form-modal';
 import { HistoryDetailsModal } from '../../components/history-details-modal/history-details-modal';
+import { ReviewFormModal } from '../../components/create-forms/review-form-modal/review-form-modal';
 import { DataService } from '../../../../core/services/data';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../../core/services/auth';
@@ -16,6 +17,7 @@ import {
   CreatePointPayload,
   CreateRoutePayload,
   CreateUserPayload,
+  CreateReviewPayload,
   ITEM_TYPE_OPTIONS,
   ITEM_UI_CONFIG,
   ItemActionConfig,
@@ -27,13 +29,16 @@ import {
   PointItem,
   RouteItem,
   UpdateUserPayload,
-  UserItem
+  UserItem,
+  ReviewItem,
 } from '../../../../core/models/items';
-import { PointFormValue, RouteFormValue, UserFormValue } from '../../models/forms';
+import { PointFormValue, RouteFormValue, UserFormValue, ReviewFormValue } from '../../models/forms';
+
 import {
   buildPointInlineUpdatePayload,
   buildRouteInlineUpdatePayload,
-  buildUserInlineUpdatePayload
+  buildUserInlineUpdatePayload,
+  buildReviewInlineUpdatePayload,
 } from '../../utils/inline-edit-payloads';
 
 @Component({
@@ -47,10 +52,11 @@ import {
     UserFormModal,
     RouteFormModal,
     PointFormModal,
-    HistoryDetailsModal
+    HistoryDetailsModal,
+    ReviewFormModal,
   ],
   templateUrl: './data-manager-page.html',
-  styleUrl: './data-manager-page.css'
+  styleUrl: './data-manager-page.css',
 })
 export class DataManagerPage implements OnInit {
   private dataService = inject(DataService);
@@ -76,7 +82,8 @@ export class DataManagerPage implements OnInit {
     users: 0,
     routes: 0,
     points: 0,
-    history: 0
+    history: 0,
+    reviews: 0,
   });
 
   showUserModal = signal(false);
@@ -94,6 +101,10 @@ export class DataManagerPage implements OnInit {
   showHistoryDetailsModal = signal(false);
   selectedHistoryItem = signal<HistoryItem | null>(null);
 
+  showReviewModal = signal(false);
+  editingReviewId = signal<string | null>(null);
+  savingReview = signal(false);
+
   searching = signal(false);
   inlineEditSavingItemId = signal<string | null>(null);
   inlineEditCompletedItemId = signal<string | null>(null);
@@ -105,7 +116,7 @@ export class DataManagerPage implements OnInit {
     email: '',
     password: '',
     enabled: true,
-    role: 'user'
+    role: 'user',
   });
 
   routeForm = signal<RouteFormValue>({
@@ -117,7 +128,7 @@ export class DataManagerPage implements OnInit {
     duration: null,
     difficulty: 'easy',
     tags: '',
-    userId: ''
+    userId: '',
   });
 
   pointForm = signal<PointFormValue>({
@@ -127,7 +138,15 @@ export class DataManagerPage implements OnInit {
     longitude: null,
     image: '',
     routeId: '',
-    index: null
+    index: null,
+  });
+
+  reviewForm = signal<ReviewFormValue>({
+    userId: '',
+    routeId: '',
+    title: '',
+    comment: '',
+    ratings: [{ label: '', score: null }],
   });
 
   currentTypeLabel = computed(() => {
@@ -158,17 +177,17 @@ export class DataManagerPage implements OnInit {
   isRoutesType = computed(() => this.selectedType() === 'routes');
   isPointsType = computed(() => this.selectedType() === 'points');
   isHistoryType = computed(() => this.selectedType() === 'history');
+  isReviewsType = computed(() => this.selectedType() === 'reviews');
 
   isEditingUser = computed(() => this.editingUserId() !== null);
   isEditingRoute = computed(() => this.editingRouteId() !== null);
   isEditingPoint = computed(() => this.editingPointId() !== null);
+  isEditingReview = computed(() => this.editingReviewId() !== null);
+  modalTitle = computed(() => (this.isEditingUser() ? 'Edit user' : 'Add user'));
+  routeModalTitle = computed(() => (this.isEditingRoute() ? 'Edit route' : 'Add route'));
 
-  modalTitle = computed(() => this.isEditingUser() ? 'Edit user' : 'Add user');
-  routeModalTitle = computed(() => this.isEditingRoute() ? 'Edit route' : 'Add route');
-
-  pointModalTitle = computed(() =>
-    this.isEditingPoint() ? 'Edit point' : 'Add point'
-  );
+  pointModalTitle = computed(() => (this.isEditingPoint() ? 'Edit point' : 'Add point'));
+  reviewModalTitle = computed(() => (this.isEditingReview() ? 'Edit review' : 'Add review'));
 
   canAddCurrentType = computed(() => {
     if (this.isHistoryType()) {
@@ -191,7 +210,7 @@ export class DataManagerPage implements OnInit {
 
     return this.typeOptions.map((type) => ({
       ...type,
-      count: counts[type.value]
+      count: counts[type.value],
     }));
   });
 
@@ -221,7 +240,7 @@ export class DataManagerPage implements OnInit {
       .pipe(
         finalize(() => {
           this.loggingOut.set(false);
-        })
+        }),
       )
       .subscribe(() => {
         this.router.navigateByUrl('/login');
@@ -234,9 +253,14 @@ export class DataManagerPage implements OnInit {
     this.searchTerm.set('');
     this.isGlobalSearching.set(false);
     this.page.set(1);
+    this.items.set([]);
+    this.allItems.set([]);
+    this.total.set(0);
+    this.totalPages.set(0);
     this.closeUserModal();
     this.closeRouteModal();
     this.closePointModal();
+    this.closeReviewModal();
     this.onCloseHistoryDetailsModal();
     this.loadItems();
   }
@@ -326,7 +350,7 @@ export class DataManagerPage implements OnInit {
         console.error('Global search error:', error);
         this.searching.set(false);
         this.isGlobalSearching.set(false);
-      }
+      },
     });
   }
 
@@ -353,6 +377,11 @@ export class DataManagerPage implements OnInit {
 
     if (this.selectedType() === 'points') {
       this.onOpenAddPoint();
+      return;
+    }
+
+    if (this.selectedType() === 'reviews') {
+      this.onOpenAddReview();
     }
   }
 
@@ -373,6 +402,12 @@ export class DataManagerPage implements OnInit {
 
     if (this.selectedType() === 'points') {
       this.onOpenEditPoint(id);
+      return;
+    }
+
+    if (this.selectedType() === 'reviews') {
+      this.onOpenEditReview(id);
+      return;
     }
   }
 
@@ -385,7 +420,7 @@ export class DataManagerPage implements OnInit {
       email: '',
       password: '',
       enabled: true,
-      role: 'user'
+      role: 'user',
     });
     this.showUserModal.set(true);
   }
@@ -402,15 +437,15 @@ export class DataManagerPage implements OnInit {
       email: item.email,
       password: '',
       enabled: item.enabled,
-      role: item.role
+      role: item.role,
     });
     this.showUserModal.set(true);
   }
 
   onUserFieldChange<K extends keyof UserFormValue>(key: K, value: UserFormValue[K]): void {
-    this.userForm.update(current => ({
+    this.userForm.update((current) => ({
       ...current,
-      [key]: value
+      [key]: value,
     }));
   }
 
@@ -434,7 +469,7 @@ export class DataManagerPage implements OnInit {
         username: form.username.trim(),
         email: form.email.trim(),
         enabled: form.enabled,
-        role: form.role
+        role: form.role,
       };
 
       if (form.password.trim()) {
@@ -451,7 +486,7 @@ export class DataManagerPage implements OnInit {
         error: (error) => {
           console.error('Update user error:', error);
           this.savingUser.set(false);
-        }
+        },
       });
 
       return;
@@ -462,7 +497,7 @@ export class DataManagerPage implements OnInit {
       surname: form.surname.trim(),
       username: form.username.trim(),
       email: form.email.trim(),
-      password: form.password.trim()
+      password: form.password.trim(),
     };
 
     this.savingUser.set(true);
@@ -477,7 +512,7 @@ export class DataManagerPage implements OnInit {
       error: (error) => {
         console.error('Create user error:', error);
         this.savingUser.set(false);
-      }
+      },
     });
   }
 
@@ -492,7 +527,7 @@ export class DataManagerPage implements OnInit {
       duration: null,
       difficulty: 'easy',
       tags: '',
-      userId: ''
+      userId: '',
     });
     this.showRouteModal.set(true);
   }
@@ -511,16 +546,16 @@ export class DataManagerPage implements OnInit {
       duration: item.duration,
       difficulty: item.difficulty,
       tags: item.tags.join(', '),
-      userId: item.userId
+      userId: item.userId,
     });
 
     this.showRouteModal.set(true);
   }
 
   onRouteFieldChange<K extends keyof RouteFormValue>(key: K, value: RouteFormValue[K]): void {
-    this.routeForm.update(current => ({
+    this.routeForm.update((current) => ({
       ...current,
-      [key]: value
+      [key]: value,
     }));
   }
 
@@ -547,9 +582,9 @@ export class DataManagerPage implements OnInit {
       difficulty: form.difficulty,
       tags: form.tags
         .split(',')
-        .map(tag => tag.trim())
+        .map((tag) => tag.trim())
         .filter(Boolean),
-      userId: form.userId.trim()
+      userId: form.userId.trim(),
     };
 
     this.savingRoute.set(true);
@@ -564,7 +599,7 @@ export class DataManagerPage implements OnInit {
         error: (error) => {
           console.error('Update route error:', error);
           this.savingRoute.set(false);
-        }
+        },
       });
 
       return;
@@ -581,7 +616,7 @@ export class DataManagerPage implements OnInit {
       error: (error) => {
         console.error('Create route error:', error);
         this.savingRoute.set(false);
-      }
+      },
     });
   }
 
@@ -595,7 +630,7 @@ export class DataManagerPage implements OnInit {
       longitude: null,
       image: '',
       routeId: '',
-      index: null
+      index: null,
     });
 
     this.showPointModal.set(true);
@@ -615,19 +650,16 @@ export class DataManagerPage implements OnInit {
       longitude: item.longitude,
       image: item.image ?? '',
       routeId: item.routeId,
-      index: item.index
+      index: item.index,
     });
 
     this.showPointModal.set(true);
   }
 
-  onPointFieldChange<K extends keyof PointFormValue>(
-    key: K,
-    value: PointFormValue[K]
-  ): void {
-    this.pointForm.update(current => ({
+  onPointFieldChange<K extends keyof PointFormValue>(key: K, value: PointFormValue[K]): void {
+    this.pointForm.update((current) => ({
       ...current,
-      [key]: value
+      [key]: value,
     }));
   }
 
@@ -651,7 +683,7 @@ export class DataManagerPage implements OnInit {
       longitude: form.longitude === null ? 0 : Number(form.longitude),
       image: form.image.trim(),
       routeId: form.routeId.trim(),
-      index: form.index === null ? 0 : Number(form.index)
+      index: form.index === null ? 0 : Number(form.index),
     };
 
     this.savingPoint.set(true);
@@ -666,7 +698,7 @@ export class DataManagerPage implements OnInit {
         error: (error) => {
           console.error('Update point error:', error);
           this.savingPoint.set(false);
-        }
+        },
       });
 
       return;
@@ -683,7 +715,115 @@ export class DataManagerPage implements OnInit {
       error: (error) => {
         console.error('Create point error:', error);
         this.savingPoint.set(false);
-      }
+      },
+    });
+  }
+
+  onOpenAddReview(): void {
+    this.editingReviewId.set(null);
+
+    this.reviewForm.set({
+      title: '',
+      comment: '',
+      routeId: '',
+      userId: '',
+      ratings: [{ label: '', score: null }],
+    });
+
+    this.showReviewModal.set(true);
+  }
+
+  onOpenEditReview(id: string): void {
+    const item = this.items().find((review): review is ReviewItem => review._id === id);
+
+    if (!item) return;
+
+    this.editingReviewId.set(id);
+
+    this.reviewForm.set({
+      title: item.title,
+      comment: item.comment ?? '',
+      routeId: item.routeId,
+      userId: item.userId,
+      ratings:
+        item.ratings.length > 0
+          ? item.ratings.map((rating) => ({
+              label: rating.label,
+              score: rating.score,
+            }))
+          : [{ label: '', score: null }],
+    });
+
+    this.showReviewModal.set(true);
+  }
+
+  onReviewFieldChange<K extends keyof ReviewFormValue>(key: K, value: ReviewFormValue[K]): void {
+    this.reviewForm.update((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  }
+
+  onCloseReviewModal(): void {
+    if (this.savingReview()) {
+      return;
+    }
+
+    this.closeReviewModal();
+  }
+
+  onSubmitReview(): void {
+    if (!this.isReviewsType()) return;
+
+    const form = this.reviewForm();
+
+    const ratings = form.ratings
+      .map((rating) => ({
+        label: rating.label.trim(),
+        score: rating.score,
+      }))
+      .filter(
+        (rating): rating is { label: string; score: number } =>
+          rating.label.length > 0 && rating.score !== null && Number.isFinite(rating.score),
+      );
+
+    const payload: CreateReviewPayload = {
+      title: form.title.trim(),
+      comment: form.comment.trim(),
+      routeId: form.routeId.trim(),
+      userId: form.userId.trim(),
+      ratings,
+    };
+
+    this.savingReview.set(true);
+
+    if (this.isEditingReview()) {
+      this.dataService.updateItem('reviews', this.editingReviewId()!, payload).subscribe({
+        next: () => {
+          this.savingReview.set(false);
+          this.closeReviewModal();
+          this.loadItems();
+        },
+        error: (error) => {
+          console.error('Update review error:', error);
+          this.savingReview.set(false);
+        },
+      });
+
+      return;
+    }
+
+    this.dataService.createItem('reviews', payload).subscribe({
+      next: () => {
+        this.savingReview.set(false);
+        this.closeReviewModal();
+        this.page.set(1);
+        this.loadItems();
+      },
+      error: (error) => {
+        console.error('Create review error:', error);
+        this.savingReview.set(false);
+      },
     });
   }
 
@@ -697,7 +837,7 @@ export class DataManagerPage implements OnInit {
         this.loadEntityCounts();
         this.loadItems();
       },
-      error: (error) => console.error('Delete item error:', error)
+      error: (error) => console.error('Delete item error:', error),
     });
   }
 
@@ -709,11 +849,13 @@ export class DataManagerPage implements OnInit {
 
     this.dataService.deleteMany(this.selectedType(), ids).subscribe({
       next: () => {
-        this.selectedIds.update((current) => current.filter((selectedId) => !ids.includes(selectedId)));
+        this.selectedIds.update((current) =>
+          current.filter((selectedId) => !ids.includes(selectedId)),
+        );
         this.loadEntityCounts();
         this.loadItems();
       },
-      error: (error) => console.error('Bulk delete error:', error)
+      error: (error) => console.error('Bulk delete error:', error),
     });
   }
 
@@ -749,7 +891,7 @@ export class DataManagerPage implements OnInit {
         error: (error) => {
           console.error('Inline edit user error:', error);
           this.inlineEditSavingItemId.set(null);
-        }
+        },
       });
       return;
     }
@@ -765,7 +907,7 @@ export class DataManagerPage implements OnInit {
         error: (error) => {
           console.error('Inline edit route error:', error);
           this.inlineEditSavingItemId.set(null);
-        }
+        },
       });
       return;
     }
@@ -781,8 +923,24 @@ export class DataManagerPage implements OnInit {
         error: (error) => {
           console.error('Inline edit point error:', error);
           this.inlineEditSavingItemId.set(null);
-        }
+        },
       });
+    }
+
+    if (type === 'reviews') {
+      const payload = buildReviewInlineUpdatePayload(changes);
+      this.dataService.updateItem('reviews', itemId, payload).subscribe({
+        next: () => {
+          this.inlineEditSavingItemId.set(null);
+          this.inlineEditCompletedItemId.set(itemId);
+          this.loadItems();
+        },
+        error: (error) => {
+          console.error('Inline edit review error:', error);
+          this.inlineEditSavingItemId.set(null);
+        },
+      });
+      return;
     }
   }
 
@@ -832,29 +990,44 @@ export class DataManagerPage implements OnInit {
     this.savingPoint.set(false);
   }
 
+  private closeReviewModal(): void {
+    this.showReviewModal.set(false);
+    this.editingReviewId.set(null);
+    this.savingReview.set(false);
+  }
+
   private loadItems(filters?: Record<string, unknown>): void {
     this.loading.set(true);
 
+    const requestedType = this.selectedType();
     const page = this.page();
     const limit = this.limit();
 
-    this.dataService.getItems(this.selectedType(), page, limit, filters).subscribe({
+    this.dataService.getItems(requestedType, page, limit, filters).subscribe({
       next: (response) => {
+        if (this.selectedType() !== requestedType) {
+          return;
+        }
+
         this.allItems.set(response.data);
         this.items.set(response.data);
         this.page.set(Math.max(1, response.page));
         this.limit.set(Math.max(1, response.limit));
         this.total.set(Math.max(0, response.total));
         this.totalPages.set(Math.max(1, response.totalPages));
-        this.updateEntityCount(this.selectedType(), response.total);
+        this.updateEntityCount(requestedType, response.total);
         this.loading.set(false);
         this.searching.set(false);
       },
       error: (error) => {
+        if (this.selectedType() !== requestedType) {
+          return;
+        }
+
         console.error('Load items error:', error);
         this.loading.set(false);
         this.searching.set(false);
-      }
+      },
     });
   }
 
@@ -901,12 +1074,14 @@ export class DataManagerPage implements OnInit {
       return;
     }
 
-    this.dataService.updateItem('users', item._id, {
-      enabled: !item.enabled
-    }).subscribe({
-      next: () => this.loadItems(),
-      error: (error) => console.error('Toggle enabled error:', error)
-    });
+    this.dataService
+      .updateItem('users', item._id, {
+        enabled: !item.enabled,
+      })
+      .subscribe({
+        next: () => this.loadItems(),
+        error: (error) => console.error('Toggle enabled error:', error),
+      });
   }
 
   private loadEntityCounts(): void {
@@ -919,8 +1094,8 @@ export class DataManagerPage implements OnInit {
         catchError((error) => {
           console.error(`Load ${type.value} count error:`, error);
           return of([type.value, this.entityCounts()[type.value]] as const);
-        })
-      )
+        }),
+      ),
     );
 
     forkJoin(requests)
@@ -939,7 +1114,7 @@ export class DataManagerPage implements OnInit {
   private updateEntityCount(type: ItemType, count: number): void {
     this.entityCounts.update((current) => ({
       ...current,
-      [type]: Math.max(0, count)
+      [type]: Math.max(0, count),
     }));
   }
 }

@@ -2,6 +2,7 @@ import { CreatePointPayload, PointItem, UpdatePointPayload } from './Point';
 import { CreateHistoryPayload, HistoryChange, HistoryItem, UpdateHistoryPayload } from './History';
 import { CreateRoutePayload, RouteItem, UpdateRoutePayload } from './Route';
 import { CreateUserPayload, UpdateUserPayload, UserItem } from './User';
+import { CreateReviewPayload, ReviewItem, UpdateReviewPayload } from './Review';
 
 export type {
   PointItem,
@@ -16,13 +17,16 @@ export type {
   UpdateRoutePayload,
   UserItem,
   CreateUserPayload,
-  UpdateUserPayload
+  UpdateUserPayload,
+  ReviewItem,
+  CreateReviewPayload,
+  UpdateReviewPayload,
 };
 export type { RouteDifficulty } from './Route';
 
 export interface ItemModelBase {
   _id: string;
-  name: string;
+  name?: string;
   enabled?: boolean;
 }
 
@@ -31,6 +35,7 @@ export interface ItemModelByType {
   routes: RouteItem;
   points: PointItem;
   history: HistoryItem;
+  reviews: ReviewItem;
 }
 
 export type ItemType = keyof ItemModelByType;
@@ -72,6 +77,7 @@ export interface CreatePayloadByType {
   routes: CreateRoutePayload;
   points: CreatePointPayload;
   history: CreateHistoryPayload;
+  reviews: CreateReviewPayload;
 }
 
 export interface UpdatePayloadByType {
@@ -79,6 +85,7 @@ export interface UpdatePayloadByType {
   routes: UpdateRoutePayload;
   points: UpdatePointPayload;
   history: UpdateHistoryPayload;
+  reviews: UpdateReviewPayload;
 }
 
 export const ITEM_UI_CONFIG: Record<ItemType, ItemUiConfig> = {
@@ -89,38 +96,48 @@ export const ITEM_UI_CONFIG: Record<ItemType, ItemUiConfig> = {
       { key: 'name', label: 'Name' },
       { key: 'username', label: 'Username' },
       { key: 'email', label: 'Email' },
-      { key: 'enabled', label: 'Status' }
+      { key: 'enabled', label: 'Status' },
     ],
     actions: {
       edit: true,
       delete: true,
-      toggleEnabled: true
+      toggleEnabled: true,
     },
     search: {
       enabled: true,
       key: 'name',
-      placeholder: 'Search users by name...'
+      placeholder: 'Search users by name...',
     },
-    editableFields: ['name', 'surname', 'username', 'email', 'password', 'enabled', 'role']
+    editableFields: ['name', 'surname', 'username', 'email', 'password', 'enabled', 'role'],
   },
   routes: {
     label: 'Routes',
     addButtonLabel: 'Add route',
     previewColumns: [
       { key: 'name', label: 'Name' },
-      { key: '_id', label: 'ID' }
+      { key: '_id', label: 'ID' },
     ],
     actions: {
       edit: true,
       delete: true,
-      toggleEnabled: false
+      toggleEnabled: false,
     },
     search: {
       enabled: true,
       key: 'city',
-      placeholder: 'Search routes by city...'
+      placeholder: 'Search routes by city...',
     },
-    editableFields: ['name', 'description', 'city', 'country', 'distance', 'duration', 'difficulty', 'tags', 'userId']
+    editableFields: [
+      'name',
+      'description',
+      'city',
+      'country',
+      'distance',
+      'duration',
+      'difficulty',
+      'tags',
+      'userId',
+    ],
   },
   points: {
     label: 'Points',
@@ -129,19 +146,19 @@ export const ITEM_UI_CONFIG: Record<ItemType, ItemUiConfig> = {
       { key: 'name', label: 'Name' },
       { key: 'description', label: 'Description' },
       { key: 'index', label: 'Index' },
-      { key: '_id', label: 'ID' }
+      { key: '_id', label: 'ID' },
     ],
     actions: {
       edit: true,
       delete: true,
-      toggleEnabled: false
+      toggleEnabled: false,
     },
     search: {
       enabled: false,
       key: '',
-      placeholder: 'Search...'
+      placeholder: 'Search...',
     },
-    editableFields: ['name', 'description', 'latitude', 'longitude', 'image', 'routeId', 'index']
+    editableFields: ['name', 'description', 'latitude', 'longitude', 'image', 'routeId', 'index'],
   },
   history: {
     label: 'History',
@@ -155,25 +172,48 @@ export const ITEM_UI_CONFIG: Record<ItemType, ItemUiConfig> = {
     actions: {
       edit: false,
       delete: false,
-      toggleEnabled: false
+      toggleEnabled: false,
     },
     search: {
       enabled: false,
       key: '',
-      placeholder: 'Search history...'
+      placeholder: 'Search history...',
     },
-    editableFields: []
-  }
+    editableFields: [],
+  },
+  reviews: {
+    label: 'Reviews',
+    addButtonLabel: 'Add review',
+    previewColumns: [
+      { key: 'title', label: 'Title' },
+      { key: 'routeId', label: 'Route ID' },
+      { key: 'userId', label: 'User ID' },
+      { key: '_id', label: 'ID' },
+    ],
+    actions: {
+      edit: true,
+      delete: true,
+      toggleEnabled: false,
+    },
+    search: {
+      enabled: true,
+      key: 'title',
+      placeholder: 'Search reviews by title...',
+    },
+    editableFields: ['title', 'comment', 'routeId', 'userId'],
+  },
 };
 
-export const ITEM_TYPE_OPTIONS: ItemTypeOption[] = Object.entries(ITEM_UI_CONFIG).map(([value, config]) => ({
-  value: value as ItemType,
-  label: config.label
-}));
+export const ITEM_TYPE_OPTIONS: ItemTypeOption[] = Object.entries(ITEM_UI_CONFIG).map(
+  ([value, config]) => ({
+    value: value as ItemType,
+    label: config.label,
+  }),
+);
 
 export function normalizeItemByType<TType extends ItemType>(
   type: TType,
-  value: Record<string, unknown>
+  value: Record<string, unknown>,
 ): ItemModelByType[TType] {
   if (type === 'users') {
     return normalizeUser(value) as ItemModelByType[TType];
@@ -187,12 +227,16 @@ export function normalizeItemByType<TType extends ItemType>(
     return normalizeHistory(value) as ItemModelByType[TType];
   }
 
+  if (type === 'reviews') {
+    return normalizeReview(value) as ItemModelByType[TType];
+  }
+
   return normalizePoint(value) as ItemModelByType[TType];
 }
 
 export function normalizeManyByType<TType extends ItemType>(
   type: TType,
-  values: Record<string, unknown>[]
+  values: Record<string, unknown>[],
 ): ItemModelByType[TType][] {
   return values.map((value) => normalizeItemByType(type, value));
 }
@@ -208,7 +252,7 @@ function normalizeUser(value: Record<string, unknown>): UserItem {
     username: getStringValue([value['username']], ''),
     email: getStringValue([value['email']], ''),
     enabled: getBooleanValue(value['enabled'], true),
-    role: getStringValue([value['role']], 'user') as UserItem['role']
+    role: getStringValue([value['role']], 'user') as UserItem['role'],
   };
 }
 
@@ -226,7 +270,7 @@ function normalizeRoute(value: Record<string, unknown>): RouteItem {
     duration: getNumberValue([value['duration']], 0),
     difficulty: getStringValue([value['difficulty']], 'easy') as RouteItem['difficulty'],
     tags: getStringArray(value['tags']),
-    userId: getStringValue([value['userId'], value['user']], '')
+    userId: getStringValue([value['userId'], value['user']], ''),
   };
 }
 
@@ -242,7 +286,7 @@ function normalizePoint(value: Record<string, unknown>): PointItem {
     longitude: getNumberValue([value['longitude']], 0),
     image: getStringValue([value['image']], ''),
     routeId: getStringValue([value['routeId'], value['route']], ''),
-    index: getNumberValue([value['index']], 0)
+    index: getNumberValue([value['index']], 0),
   };
 }
 
@@ -250,13 +294,10 @@ function normalizeHistory(value: Record<string, unknown>): HistoryItem {
   const id = getItemId(value);
   const action = getStringValue([value['action']], 'CREATE') as HistoryItem['action'];
   const entity = getStringValue([value['entity']], 'USER') as HistoryItem['entity'];
-  const changes = getArrayValue<Record<string, unknown>>(value['changes'], []).map(
-    (change) => normalizeHistoryChange(change)
+  const changes = getArrayValue<Record<string, unknown>>(value['changes'], []).map((change) =>
+    normalizeHistoryChange(change),
   );
-  const entityId = getStringValue(
-    [changes[0]?.objectId, value['entityId'], value['objectId']],
-    ''
-  );
+  const entityId = getStringValue([changes[0]?.objectId, value['entityId'], value['objectId']], '');
   const createdAt = getStringValue([value['createdAt']], new Date(0).toISOString());
   const updatedAt = getStringValue([value['updatedAt']], createdAt);
 
@@ -269,7 +310,7 @@ function normalizeHistory(value: Record<string, unknown>): HistoryItem {
     entityId,
     changes,
     createdAt,
-    updatedAt
+    updatedAt,
   };
 }
 
@@ -283,7 +324,7 @@ function normalizeHistoryChange(value: Record<string, unknown>): HistoryChange {
     fieldName,
     beforeValue: normalizeHistoryChangeValue(value['beforeValue'], fieldName),
     afterValue: normalizeHistoryChangeValue(value['afterValue'], fieldName),
-    changedAt: getStringValue([value['changedAt']], new Date(0).toISOString())
+    changedAt: getStringValue([value['changedAt']], new Date(0).toISOString()),
   };
 }
 
@@ -327,6 +368,45 @@ function normalizeHistoryChangeValue(rawValue: unknown, fieldName: string): stri
   return '';
 }
 
+function normalizeReview(value: Record<string, unknown>): ReviewItem {
+  const id = getItemId(value);
+
+  return {
+    ...value,
+    _id: id,
+    title: getStringValue([value['title']], id),
+    comment: getStringValue([value['comment']], ''),
+    routeId: getStringValue([value['routeId'], value['route']], ''),
+    userId: getStringValue([value['userId'], value['user']], ''),
+    ratings: getRatingsArray(value['ratings']),
+    createdAt: getStringValue([value['createdAt']], ''),
+    updatedAt: getStringValue([value['updatedAt']], ''),
+  };
+}
+
+function getRatingsArray(value: unknown): ReviewItem['ratings'] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => {
+      if (typeof item !== 'object' || item === null) {
+        return null;
+      }
+
+      const objectItem = item as Record<string, unknown>;
+
+      return {
+        label: getStringValue([objectItem['label']], ''),
+        score: getNumberValue([objectItem['score']], 0),
+      };
+    })
+    .filter(
+      (item): item is NonNullable<typeof item> => item !== null && item.label.trim().length > 0,
+    );
+}
+
 function getItemId(value: Record<string, unknown>): string {
   return getStringValue([value['_id'], value['id']], '');
 }
@@ -336,9 +416,7 @@ function getStringArray(value: unknown): string[] {
     return [];
   }
 
-  return value
-    .map((item) => getStringValue([item], ''))
-    .filter((item) => item.trim().length > 0);
+  return value.map((item) => getStringValue([item], '')).filter((item) => item.trim().length > 0);
 }
 
 function getArrayValue<T>(value: unknown, fallback: T[]): T[] {
